@@ -5,5 +5,13 @@
   "item.jugglecraft.coal_generator": "Coal Generator",
   "block.jugglecraft.basic_battery": "Basic Battery",
   "item.jugglecraft.basic_battery": "Basic Battery",
-  "creativetab.jugglecraft.jugglecraft_tab": "JuggleCraft"
+  "block.jugglecraft.fe_to_redstone_transformer": "FE to Redstone Transformer",
+  "item.jugglecraft.fe_to_redstone_transformer": "FE to Redstone Transformer",
+  "creativetab.jugglecraft.jugglecraft_tab": "JuggleCraft",
+  "container.jugglecraft.basic_battery": "Basic Battery",
+  "container.jugglecraft.coal_generator": "Coal Generator",
+  "container.jugglecraft.jbox": "J-Box",
+  "state.jugglecraft.battery.idle": "Idle",
+  "state.jugglecraft.battery.charging": "Charging",
+  "state.jugglecraft.battery.discharging": "Discharging"
 }

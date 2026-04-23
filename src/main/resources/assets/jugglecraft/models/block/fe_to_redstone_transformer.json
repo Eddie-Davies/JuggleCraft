@@ -1,0 +1,24 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "front": "minecraft:block/redstone_block",
+    "back": "minecraft:block/iron_block",
+    "side": "minecraft:block/smooth_stone",
+    "top": "minecraft:block/iron_block",
+    "bottom": "minecraft:block/iron_block"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 8],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": { "uv": [0, 0, 16, 16], "texture": "#front" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#back" },
+        "east":  { "uv": [0, 0, 8, 16], "texture": "#side" },
+        "west":  { "uv": [0, 0, 8, 16], "texture": "#side" },
+        "up":    { "uv": [0, 0, 16, 8], "texture": "#top" },
+        "down":  { "uv": [0, 0, 16, 8], "texture": "#bottom" }
+      }
+    }
+  ]
+}

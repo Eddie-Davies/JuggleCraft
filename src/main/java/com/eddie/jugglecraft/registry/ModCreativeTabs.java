@@ -20,6 +20,7 @@ public class ModCreativeTabs {
                         output.accept(ModItems.JBOX.get());
                         output.accept(ModItems.COAL_GENERATOR.get());
                         output.accept(ModItems.BASIC_BATTERY.get());
+                        output.accept(ModItems.FE_TO_REDSTONE_TRANSFORMER.get());
                     })
                     .build());
 

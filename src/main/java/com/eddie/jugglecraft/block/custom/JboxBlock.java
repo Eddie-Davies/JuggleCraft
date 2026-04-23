@@ -2,14 +2,19 @@ package com.eddie.jugglecraft.block.custom;
 
 import com.eddie.jugglecraft.block.entity.JboxBlockEntity;
 import com.eddie.jugglecraft.registry.ModBlockEntities;
+import com.eddie.jugglecraft.util.MountedDeviceHelper;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.Mirror;
@@ -25,6 +30,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 public class JboxBlock extends HorizontalDirectionalBlock implements EntityBlock {
@@ -51,8 +57,12 @@ public class JboxBlock extends HorizontalDirectionalBlock implements EntityBlock
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection().getOpposite());
+        Direction facing = context.getHorizontalDirection().getOpposite();
+        if (!MountedDeviceHelper.canAttachToControllableDevice(context.getLevel(), context.getClickedPos(), facing)) {
+            return null;
+        }
+
+        return this.defaultBlockState().setValue(FACING, facing);
     }
 
     @Override
@@ -74,6 +84,21 @@ public class JboxBlock extends HorizontalDirectionalBlock implements EntityBlock
             case WEST  -> WEST_SHAPE;
             default -> NORTH_SHAPE;
         };
+    }
+
+    @Override
+    public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
+        return MountedDeviceHelper.canAttachToControllableDevice(level, pos, state.getValue(FACING));
+    }
+
+    @Override
+    public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState, LevelAccessor level, BlockPos currentPos,
+                                  BlockPos neighborPos) {
+        if (!state.canSurvive(level, currentPos)) {
+            return Blocks.AIR.defaultBlockState();
+        }
+
+        return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
     }
 
     @Nullable
@@ -98,8 +123,9 @@ public class JboxBlock extends HorizontalDirectionalBlock implements EntityBlock
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof JboxBlockEntity jboxBlockEntity) {
-            player.displayClientMessage(Component.literal(jboxBlockEntity.describeStatus()), true);
+        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
+                && level.getBlockEntity(pos) instanceof JboxBlockEntity jboxBlockEntity) {
+            NetworkHooks.openScreen(serverPlayer, jboxBlockEntity, pos);
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide);

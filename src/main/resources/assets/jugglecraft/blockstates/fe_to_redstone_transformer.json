@@ -1,0 +1,40 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "facing": "north"
+      },
+      "apply": {
+        "model": "jugglecraft:block/fe_to_redstone_transformer",
+        "y": 0
+      }
+    },
+    {
+      "when": {
+        "facing": "east"
+      },
+      "apply": {
+        "model": "jugglecraft:block/fe_to_redstone_transformer",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "facing": "south"
+      },
+      "apply": {
+        "model": "jugglecraft:block/fe_to_redstone_transformer",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "facing": "west"
+      },
+      "apply": {
+        "model": "jugglecraft:block/fe_to_redstone_transformer",
+        "y": 270
+      }
+    }
+  ]
+}

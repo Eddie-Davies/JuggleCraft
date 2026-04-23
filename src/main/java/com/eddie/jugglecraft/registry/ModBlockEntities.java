@@ -3,6 +3,7 @@ package com.eddie.jugglecraft.registry;
 import com.eddie.jugglecraft.JuggleCraft;
 import com.eddie.jugglecraft.block.entity.BasicBatteryBlockEntity;
 import com.eddie.jugglecraft.block.entity.CoalGeneratorBlockEntity;
+import com.eddie.jugglecraft.block.entity.FeToRedstoneTransformerBlockEntity;
 import com.eddie.jugglecraft.block.entity.JboxBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -22,6 +23,9 @@ public class ModBlockEntities {
 
     public static final RegistryObject<BlockEntityType<BasicBatteryBlockEntity>> BASIC_BATTERY = BLOCK_ENTITY_TYPES.register("basic_battery",
             () -> BlockEntityType.Builder.of(BasicBatteryBlockEntity::new, ModBlocks.BASIC_BATTERY.get()).build(null));
+
+        public static final RegistryObject<BlockEntityType<FeToRedstoneTransformerBlockEntity>> FE_TO_REDSTONE_TRANSFORMER = BLOCK_ENTITY_TYPES.register("fe_to_redstone_transformer",
+                        () -> BlockEntityType.Builder.of(FeToRedstoneTransformerBlockEntity::new, ModBlocks.FE_TO_REDSTONE_TRANSFORMER.get()).build(null));
 
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITY_TYPES.register(eventBus);

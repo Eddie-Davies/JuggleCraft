@@ -3,6 +3,7 @@
   "values": [
     "jugglecraft:jbox",
     "jugglecraft:coal_generator",
-    "jugglecraft:basic_battery"
+    "jugglecraft:basic_battery",
+    "jugglecraft:fe_to_redstone_transformer"
   ]
 }

@@ -5,7 +5,7 @@ import com.eddie.jugglecraft.registry.ModBlockEntities;
 import com.eddie.jugglecraft.util.ModInventoryHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -25,6 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 public class CoalGeneratorBlock extends HorizontalDirectionalBlock implements EntityBlock {
@@ -84,8 +85,9 @@ public class CoalGeneratorBlock extends HorizontalDirectionalBlock implements En
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide && level.getBlockEntity(pos) instanceof CoalGeneratorBlockEntity coalGeneratorBlockEntity) {
-            player.displayClientMessage(Component.literal(coalGeneratorBlockEntity.describeStatus()), true);
+        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
+                && level.getBlockEntity(pos) instanceof CoalGeneratorBlockEntity coalGeneratorBlockEntity) {
+            NetworkHooks.openScreen(serverPlayer, coalGeneratorBlockEntity, pos);
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide);
