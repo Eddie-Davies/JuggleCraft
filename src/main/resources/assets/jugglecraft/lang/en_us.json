@@ -1,5 +1,9 @@
 {
   "block.jugglecraft.jbox": "J-Box",
   "item.jugglecraft.jbox": "J-Box",
+  "block.jugglecraft.coal_generator": "Coal Generator",
+  "item.jugglecraft.coal_generator": "Coal Generator",
+  "block.jugglecraft.basic_battery": "Basic Battery",
+  "item.jugglecraft.basic_battery": "Basic Battery",
   "creativetab.jugglecraft.jugglecraft_tab": "JuggleCraft"
 }

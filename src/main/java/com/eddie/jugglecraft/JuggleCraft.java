@@ -1,6 +1,7 @@
 package com.eddie.jugglecraft;
 
 import com.eddie.jugglecraft.registry.ModBlocks;
+import com.eddie.jugglecraft.registry.ModBlockEntities;
 import com.eddie.jugglecraft.registry.ModCreativeTabs;
 import com.eddie.jugglecraft.registry.ModItems;
 import com.mojang.logging.LogUtils;
@@ -19,6 +20,7 @@ public class JuggleCraft {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         ModBlocks.register(modEventBus);
+        ModBlockEntities.register(modEventBus);
         ModItems.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
 

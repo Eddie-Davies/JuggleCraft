@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "jugglecraft:block/coal_generator", "y": 0 },
+    "facing=east":  { "model": "jugglecraft:block/coal_generator", "y": 90 },
+    "facing=south": { "model": "jugglecraft:block/coal_generator", "y": 180 },
+    "facing=west":  { "model": "jugglecraft:block/coal_generator", "y": 270 }
+  }
+}

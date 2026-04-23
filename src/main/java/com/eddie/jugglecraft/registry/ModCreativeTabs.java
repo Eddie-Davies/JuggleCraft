@@ -18,6 +18,8 @@ public class ModCreativeTabs {
                     .icon(() -> ModItems.JBOX.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(ModItems.JBOX.get());
+                        output.accept(ModItems.COAL_GENERATOR.get());
+                        output.accept(ModItems.BASIC_BATTERY.get());
                     })
                     .build());
 
