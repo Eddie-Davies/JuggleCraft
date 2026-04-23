@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "jugglecraft:block/jbox", "y": 0 },
+    "facing=east":  { "model": "jugglecraft:block/jbox", "y": 90 },
+    "facing=south": { "model": "jugglecraft:block/jbox", "y": 180 },
+    "facing=west":  { "model": "jugglecraft:block/jbox", "y": 270 }
+  }
+}

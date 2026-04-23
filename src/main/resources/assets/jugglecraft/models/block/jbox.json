@@ -1,0 +1,24 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "front": "jugglecraft:block/jbox/jbox_front",
+    "back": "jugglecraft:block/jbox/jbox_back",
+    "side": "jugglecraft:block/jbox/jbox_side",
+    "top": "jugglecraft:block/jbox/jbox_top",
+    "bottom": "jugglecraft:block/jbox/jbox_bottom"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 8],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": { "uv": [0, 0, 16, 16], "texture": "#front" },
+        "south": { "uv": [0, 0, 16, 16], "texture": "#back" },
+        "east":  { "uv": [0, 0, 8, 16],  "texture": "#side" },
+        "west":  { "uv": [0, 0, 8, 16],  "texture": "#side" },
+        "up":    { "uv": [0, 0, 16, 8],  "texture": "#top" },
+        "down":  { "uv": [0, 0, 16, 8],  "texture": "#bottom" }
+      }
+    }
+  ]
+}
