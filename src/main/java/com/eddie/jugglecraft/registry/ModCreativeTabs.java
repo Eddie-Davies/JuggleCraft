@@ -21,6 +21,7 @@ public class ModCreativeTabs {
                         output.accept(ModItems.COAL_GENERATOR.get());
                         output.accept(ModItems.BASIC_BATTERY.get());
                         output.accept(ModItems.FE_TO_REDSTONE_TRANSFORMER.get());
+                        output.accept(ModItems.RS485_WIRE.get());
                     })
                     .build());
 

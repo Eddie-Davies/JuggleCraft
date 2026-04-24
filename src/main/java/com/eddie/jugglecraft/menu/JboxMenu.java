@@ -15,8 +15,16 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class JboxMenu extends AbstractContainerMenu {
-    public static final int DATA_COUNT = 4;
+    public static final int DATA_COUNT = 10;
     public static final int CONTROL_DEVICE_BUTTON = 0;
+    public static final int ADD_DEVICE_BUTTON = 1;
+    public static final int SELECT_PREVIOUS_DEVICE_BUTTON = 2;
+    public static final int SELECT_NEXT_DEVICE_BUTTON = 3;
+    public static final int REMOVE_DEVICE_BUTTON = 4;
+    public static final int LOCAL_IP_DECREMENT_BASE = 10;
+    public static final int LOCAL_IP_INCREMENT_BASE = 20;
+    public static final int TARGET_IP_DECREMENT_BASE = 30;
+    public static final int TARGET_IP_INCREMENT_BASE = 40;
     private static final int PLAYER_INV_START = 0;
     private static final int PLAYER_INV_END = 27;
     private static final int HOTBAR_START = 27;
@@ -56,6 +64,30 @@ public class JboxMenu extends AbstractContainerMenu {
         return data.get(3);
     }
 
+    public int getIpAddress() {
+        return data.get(4);
+    }
+
+    public int getPendingDeviceIp() {
+        return data.get(5);
+    }
+
+    public int getSelectedDeviceSlot() {
+        return data.get(6);
+    }
+
+    public int getRegisteredDeviceCount() {
+        return data.get(7);
+    }
+
+    public int getSelectedDeviceRegistration() {
+        return data.get(8);
+    }
+
+    public boolean isTrackedDeviceOnline() {
+        return data.get(9) != 0;
+    }
+
     public BatteryChargeMode getBatteryChargeMode() {
         return BatteryChargeMode.byId(getTrackedControlState());
     }
@@ -77,6 +109,46 @@ public class JboxMenu extends AbstractContainerMenu {
     public boolean clickMenuButton(Player player, int id) {
         if (id == CONTROL_DEVICE_BUTTON) {
             blockEntity.controlAttachedDevice();
+            return true;
+        }
+
+        if (id == ADD_DEVICE_BUTTON) {
+            blockEntity.addPendingDevice();
+            return true;
+        }
+
+        if (id == SELECT_PREVIOUS_DEVICE_BUTTON) {
+            blockEntity.selectPreviousDeviceSlot();
+            return true;
+        }
+
+        if (id == SELECT_NEXT_DEVICE_BUTTON) {
+            blockEntity.selectNextDeviceSlot();
+            return true;
+        }
+
+        if (id == REMOVE_DEVICE_BUTTON) {
+            blockEntity.removeSelectedDevice();
+            return true;
+        }
+
+        if (id >= LOCAL_IP_DECREMENT_BASE && id < LOCAL_IP_DECREMENT_BASE + 4) {
+            blockEntity.adjustIpOctet(id - LOCAL_IP_DECREMENT_BASE, -1);
+            return true;
+        }
+
+        if (id >= LOCAL_IP_INCREMENT_BASE && id < LOCAL_IP_INCREMENT_BASE + 4) {
+            blockEntity.adjustIpOctet(id - LOCAL_IP_INCREMENT_BASE, 1);
+            return true;
+        }
+
+        if (id >= TARGET_IP_DECREMENT_BASE && id < TARGET_IP_DECREMENT_BASE + 4) {
+            blockEntity.adjustPendingDeviceIpOctet(id - TARGET_IP_DECREMENT_BASE, -1);
+            return true;
+        }
+
+        if (id >= TARGET_IP_INCREMENT_BASE && id < TARGET_IP_INCREMENT_BASE + 4) {
+            blockEntity.adjustPendingDeviceIpOctet(id - TARGET_IP_INCREMENT_BASE, 1);
             return true;
         }
 

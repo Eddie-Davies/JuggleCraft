@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "jugglecraft:block/rs485_wire" }
+  }
+}

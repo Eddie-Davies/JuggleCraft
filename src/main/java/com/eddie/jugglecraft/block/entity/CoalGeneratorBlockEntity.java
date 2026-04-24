@@ -1,6 +1,8 @@
 package com.eddie.jugglecraft.block.entity;
 
 import com.eddie.jugglecraft.energy.EnergyTransferHelper;
+import com.eddie.jugglecraft.logic.DeviceAddress;
+import com.eddie.jugglecraft.logic.IpAddressableDevice;
 import com.eddie.jugglecraft.menu.CoalGeneratorMenu;
 import com.eddie.jugglecraft.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -24,7 +26,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implements MenuProvider {
+public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implements MenuProvider, IpAddressableDevice {
     private static final int GENERATION_PER_TICK = 40;
     private static final int MAX_OUTPUT_PER_TICK = GENERATION_PER_TICK;
 
@@ -39,6 +41,7 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
     private int burnTime;
     private int maxBurnTime;
     private boolean generatorEnabled = true;
+    private int ipAddress = DeviceAddress.DEVICE_DEFAULT;
 
     public CoalGeneratorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.COAL_GENERATOR.get(), pos, state, 0, 0, 0);
@@ -85,6 +88,17 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
         return MAX_OUTPUT_PER_TICK;
     }
 
+    @Override
+    public int getIpAddress() {
+        return ipAddress;
+    }
+
+    @Override
+    public void setIpAddress(int ipAddress) {
+        this.ipAddress = ipAddress;
+        setChanged();
+    }
+
     public boolean isGeneratorEnabled() {
         return generatorEnabled;
     }
@@ -95,8 +109,8 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
     }
 
     public String describeStatus() {
-        return String.format("Coal Generator enabled=%s fuel=%d/%d output=%d FE/t",
-            generatorEnabled, burnTime, Math.max(maxBurnTime, 0), GENERATION_PER_TICK);
+        return String.format("Coal Generator enabled=%s fuel=%d/%d output=%d FE/t ip=%s",
+            generatorEnabled, burnTime, Math.max(maxBurnTime, 0), GENERATION_PER_TICK, getIpAddressText());
     }
 
     public boolean consumeEnergyForMountedTransformer(int energyAmount) {
@@ -134,6 +148,7 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
                     case 2 -> getCurrentOutputPerTick();
                     case 3 -> getMaxOutputPerTick();
                     case 4 -> isGeneratorEnabled() ? 1 : 0;
+                    case 5 -> getIpAddress();
                     default -> 0;
                 };
             }
@@ -171,6 +186,7 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
         tag.putInt("burnTime", burnTime);
         tag.putInt("maxBurnTime", maxBurnTime);
         tag.putBoolean("generatorEnabled", generatorEnabled);
+        tag.putInt("ipAddress", ipAddress);
     }
 
     @Override
@@ -180,6 +196,7 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
         burnTime = tag.getInt("burnTime");
         maxBurnTime = tag.getInt("maxBurnTime");
         generatorEnabled = tag.getBoolean("generatorEnabled");
+        ipAddress = tag.contains("ipAddress") ? tag.getInt("ipAddress") : DeviceAddress.DEVICE_DEFAULT;
     }
 
     @Override

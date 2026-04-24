@@ -8,15 +8,18 @@ The current JuggleCraft feature set now includes:
 
 - A Coal Generator with a fuel slot and an on or off control.
 - A Basic Battery with explicit charge states.
-- A J-Box that acts as a mounted controller for one attached device.
+- A J-Box that can register and control up to 16 connected devices by IP.
+- An RS485 Wire block that extends a local controller network.
 - An FE to Redstone Transformer that reads FE from an attached device and outputs a proportional redstone signal.
 - Right-click menu interfaces for the Coal Generator, Basic Battery, and J-Box.
 
-At this stage, the design is device-local and attachment-based.
+At this stage, the design is local-network and IP-based.
 
-- The J-Box must be placed directly onto a compatible device.
+- The J-Box can be placed freely and discovers devices through direct adjacency or connected RS485 wire paths.
+- Each J-Box, Coal Generator, and Basic Battery has a configurable IP address in its menu.
+- A J-Box can only control devices whose IP has been registered into one of its 16 device slots.
 - The FE to Redstone Transformer must also be placed directly onto an FE-capable device.
-- There is no cable network, remote routing system, or multi-device controller graph yet.
+- There is no remote routing system outside the local RS485-connected graph yet.
 
 ## Current Block List
 
@@ -25,6 +28,7 @@ The currently relevant gameplay blocks are:
 - `J-Box`
 - `Coal Generator`
 - `Basic Battery`
+- `RS485 Wire`
 - `FE to Redstone Transformer`
 
 All of them appear in the JuggleCraft creative tab.
@@ -65,6 +69,7 @@ The generator menu currently provides:
 - A burn indicator
 - An FE bar and FE tooltip
 - A button to toggle the generator on or off
+- IP address controls
 
 ### Interaction With Other Blocks
 
@@ -124,6 +129,7 @@ The battery menu currently provides:
 - An FE bar and FE tooltip
 - A text readout of stored FE and total capacity
 - A button that cycles the current battery mode
+- IP address controls
 
 ### Interaction With Other Blocks
 
@@ -136,27 +142,35 @@ The battery menu currently provides:
 
 ### Purpose
 
-The J-Box is now an attached single-device controller. It does not act as a general nearby network scanner anymore. It reads and controls exactly one device mounted behind it.
+The J-Box is now a local IP-based controller. It can manage up to 16 devices that are either directly adjacent to it or reachable through connected RS485 wire.
 
-### Attachment Rule
+### Network Rule
 
-The J-Box must be placed directly on a compatible target block.
+The J-Box forms a local control network over:
 
-Compatible targets are currently:
+- Directly adjacent controllable devices
+- Chains of connected `RS485 Wire` blocks
+
+Compatible controllable devices are currently:
 
 - `Coal Generator`
 - `Basic Battery`
 
-If there is no compatible target behind the face it is trying to attach to:
+Only devices that are physically reachable through that local graph and whose IP has been added to the J-Box can be controlled from the J-Box menu.
 
-- Placement is rejected.
-- If the supporting device is removed later, the J-Box drops because it can no longer survive there.
+### IP Addressing
+
+- Default J-Box IP: `10.172.152.1`
+- Default generator IP: `192.168.1.1`
+- Default battery IP: `192.168.1.1`
+
+Because generators and batteries share the same default IP, you must usually change device IPs before adding multiple devices to one J-Box.
 
 ### What The J-Box Controls
 
-The behaviour depends on what it is mounted on.
+The behaviour depends on the currently selected registered device slot.
 
-#### Mounted On A Basic Battery
+#### Selected Basic Battery
 
 The J-Box reads:
 
@@ -170,7 +184,7 @@ Its control button cycles the battery through:
 - `Charging`
 - `Discharging`
 
-#### Mounted On A Coal Generator
+#### Selected Coal Generator
 
 The J-Box reads:
 
@@ -187,23 +201,41 @@ Its control button toggles:
 
 The J-Box menu currently provides:
 
-- The type of attached device
-- The current control state of that device
-- The current FE stored in the attached device
-- The current FE capacity of the attached device
-- A single context-sensitive control button
+- The J-Box's own IP address controls
+- A target IP editor for adding a device
+- Previous and next slot buttons for up to `16` registered devices
+- The selected slot's stored IP and online or offline status
+- The selected device's current type, control state, FE, and capacity or output
+- A context-sensitive control button for the selected online device
+- An `Add Device` button that registers a reachable matching IP into the next free slot
 
 ### Important Limitation
 
-The J-Box only controls the one block it is mounted on.
+The J-Box only controls devices that are both reachable on the local RS485 graph and explicitly registered by IP.
 
 It does not currently:
 
-- control multiple devices at once
-- scan a local FE network
+- control multiple devices at once with one button press
 - rebalance energy between blocks
 - prioritize one battery over another
 - route FE through an abstract controller graph
+
+## RS485 Wire
+
+### Purpose
+
+RS485 Wire extends the local J-Box control graph so the controller does not have to sit directly on top of a battery or generator.
+
+### How It Works
+
+- A J-Box scans through touching RS485 wire blocks.
+- Any generator or battery touching that connected wire graph is considered reachable.
+- Reachable devices can be added to the J-Box by entering their IP and pressing `Add Device`.
+- The J-Box stores up to `16` device IP registrations.
+
+### Practical Note
+
+RS485 Wire handles control connectivity only. It does not transport FE.
 
 ## FE To Redstone Transformer
 
@@ -298,24 +330,28 @@ Result:
 
 - The battery actively pushes FE outward up to its transfer limit.
 
-### Setup 3: Mounted Battery Control With J-Box
+### Setup 3: Wired Battery Control With J-Box
 
 1. Place a `Basic Battery`.
-2. Place a `J-Box` directly on the battery face.
-3. Right-click the J-Box.
-4. Use the button to cycle the battery mode.
+2. Change the battery's IP if needed.
+3. Place a `J-Box` nearby.
+4. Connect the J-Box to the battery directly or with `RS485 Wire`.
+5. Enter the battery IP in the J-Box and add it.
+6. Select the device slot and use the control button to cycle the battery mode.
 
 Result:
 
-- The J-Box acts as a controller for that battery only.
-- The J-Box menu shows the battery's current FE and mode.
+- The J-Box can control that battery without being mounted directly on it.
+- The selected slot shows the battery's current FE and mode when the battery is reachable.
 
-### Setup 4: Mounted Generator Control With J-Box
+### Setup 4: Multi-Device Generator Control With J-Box
 
 1. Place a `Coal Generator`.
-2. Place a `J-Box` directly on the generator face.
-3. Right-click the J-Box.
-4. Use the button to toggle the generator on or off.
+2. Optionally place `RS485 Wire` between the generator and the `J-Box`.
+3. Set a unique generator IP if you plan to control more than one device.
+4. Enter that IP in the J-Box and add it.
+5. Use the slot selector to move between registered devices.
+6. Use the control button to toggle the selected generator on or off.
 
 Result:
 

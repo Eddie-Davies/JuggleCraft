@@ -17,8 +17,10 @@ import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.items.SlotItemHandler;
 
 public class CoalGeneratorMenu extends AbstractContainerMenu {
-    public static final int DATA_COUNT = 5;
+    public static final int DATA_COUNT = 6;
     public static final int TOGGLE_GENERATOR_BUTTON = 0;
+    public static final int IP_OCTET_DECREMENT_BASE = 10;
+    public static final int IP_OCTET_INCREMENT_BASE = 20;
     private static final int FUEL_SLOT_INDEX = 0;
     private static final int PLAYER_INV_START = 1;
     private static final int PLAYER_INV_END = 28;
@@ -76,6 +78,10 @@ public class CoalGeneratorMenu extends AbstractContainerMenu {
         return data.get(4) != 0;
     }
 
+    public int getIpAddress() {
+        return data.get(5);
+    }
+
     public int getEnergyProgress() {
         int capacity = getEnergyCapacity();
         if (capacity <= 0) {
@@ -89,6 +95,16 @@ public class CoalGeneratorMenu extends AbstractContainerMenu {
     public boolean clickMenuButton(Player player, int id) {
         if (id == TOGGLE_GENERATOR_BUTTON) {
             blockEntity.toggleGeneratorEnabled();
+            return true;
+        }
+
+        if (id >= IP_OCTET_DECREMENT_BASE && id < IP_OCTET_DECREMENT_BASE + 4) {
+            blockEntity.adjustIpOctet(id - IP_OCTET_DECREMENT_BASE, -1);
+            return true;
+        }
+
+        if (id >= IP_OCTET_INCREMENT_BASE && id < IP_OCTET_INCREMENT_BASE + 4) {
+            blockEntity.adjustIpOctet(id - IP_OCTET_INCREMENT_BASE, 1);
             return true;
         }
 

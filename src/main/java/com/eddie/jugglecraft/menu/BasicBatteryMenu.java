@@ -15,8 +15,10 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class BasicBatteryMenu extends AbstractContainerMenu {
-    public static final int DATA_COUNT = 3;
+    public static final int DATA_COUNT = 4;
     public static final int CYCLE_CHARGE_MODE_BUTTON = 0;
+    public static final int IP_OCTET_DECREMENT_BASE = 10;
+    public static final int IP_OCTET_INCREMENT_BASE = 20;
     private static final int PLAYER_INV_START = 0;
     private static final int PLAYER_INV_END = 27;
     private static final int HOTBAR_START = 27;
@@ -52,6 +54,10 @@ public class BasicBatteryMenu extends AbstractContainerMenu {
         return BatteryChargeMode.byId(data.get(2));
     }
 
+    public int getIpAddress() {
+        return data.get(3);
+    }
+
     public int getEnergyProgress() {
         int capacity = getEnergyCapacity();
         if (capacity <= 0) {
@@ -65,6 +71,16 @@ public class BasicBatteryMenu extends AbstractContainerMenu {
     public boolean clickMenuButton(Player player, int id) {
         if (id == CYCLE_CHARGE_MODE_BUTTON) {
             blockEntity.cycleChargeMode();
+            return true;
+        }
+
+        if (id >= IP_OCTET_DECREMENT_BASE && id < IP_OCTET_DECREMENT_BASE + 4) {
+            blockEntity.adjustIpOctet(id - IP_OCTET_DECREMENT_BASE, -1);
+            return true;
+        }
+
+        if (id >= IP_OCTET_INCREMENT_BASE && id < IP_OCTET_INCREMENT_BASE + 4) {
+            blockEntity.adjustIpOctet(id - IP_OCTET_INCREMENT_BASE, 1);
             return true;
         }
 

@@ -2,6 +2,8 @@ package com.eddie.jugglecraft.block.entity;
 
 import com.eddie.jugglecraft.energy.EnergyTransferHelper;
 import com.eddie.jugglecraft.logic.BatteryChargeMode;
+import com.eddie.jugglecraft.logic.DeviceAddress;
+import com.eddie.jugglecraft.logic.IpAddressableDevice;
 import com.eddie.jugglecraft.menu.BasicBatteryMenu;
 import com.eddie.jugglecraft.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -21,7 +23,7 @@ import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implements MenuProvider {
+public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implements MenuProvider, IpAddressableDevice {
     private static final int CAPACITY = 100000;
     private static final int MAX_TRANSFER = 200;
 
@@ -67,6 +69,7 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
 
     private LazyOptional<IEnergyStorage> batteryEnergyCapability = LazyOptional.empty();
     private BatteryChargeMode chargeMode = BatteryChargeMode.CHARGING;
+    private int ipAddress = DeviceAddress.DEVICE_DEFAULT;
 
     public BasicBatteryBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.BASIC_BATTERY.get(), pos, state, CAPACITY, MAX_TRANSFER, MAX_TRANSFER);
@@ -98,8 +101,20 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
         return true;
     }
 
+    @Override
+    public int getIpAddress() {
+        return ipAddress;
+    }
+
+    @Override
+    public void setIpAddress(int ipAddress) {
+        this.ipAddress = ipAddress;
+        setChanged();
+    }
+
     public String describeStatus() {
-        return String.format("Basic Battery mode=%s energy=%d/%d FE", chargeMode.name(), getStoredEnergy(), getEnergyCapacity());
+        return String.format("Basic Battery mode=%s energy=%d/%d FE ip=%s",
+                chargeMode.name(), getStoredEnergy(), getEnergyCapacity(), getIpAddressText());
     }
 
     @Override
@@ -116,6 +131,7 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
                     case 0 -> getStoredEnergy();
                     case 1 -> getEnergyCapacity();
                     case 2 -> getChargeMode().ordinal();
+                    case 3 -> getIpAddress();
                     default -> 0;
                 };
             }
@@ -135,12 +151,14 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putInt("chargeMode", chargeMode.ordinal());
+        tag.putInt("ipAddress", ipAddress);
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         chargeMode = BatteryChargeMode.byId(tag.getInt("chargeMode"));
+        ipAddress = tag.contains("ipAddress") ? tag.getInt("ipAddress") : DeviceAddress.DEVICE_DEFAULT;
     }
 
     @Override
