@@ -213,6 +213,16 @@ The J-Box menu currently provides:
 
 The J-Box only controls devices that are both reachable on the local RS485 graph and explicitly registered by IP.
 
+When multiple reachable devices share the same IP:
+
+- The J-Box picks the device with the shortest direct or wire path first.
+- If two matching devices are at the same distance, it falls back to the one placed earlier.
+
+When multiple J-Boxes compete for the same reachable device IP:
+
+- Control priority goes to the J-Box with the shortest path to that device.
+- If two J-Boxes are at the same distance, it falls back to the one placed earlier.
+
 It does not currently:
 
 - control multiple devices at once with one button press

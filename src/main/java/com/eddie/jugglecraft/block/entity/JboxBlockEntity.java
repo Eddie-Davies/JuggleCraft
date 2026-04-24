@@ -2,6 +2,7 @@ package com.eddie.jugglecraft.block.entity;
 
 import com.eddie.jugglecraft.logic.DeviceAddress;
 import com.eddie.jugglecraft.logic.IpAddressableDevice;
+import com.eddie.jugglecraft.logic.PlacementOrderedNode;
 import com.eddie.jugglecraft.logic.Rs485NetworkHelper;
 import com.eddie.jugglecraft.menu.JboxMenu;
 import com.eddie.jugglecraft.registry.ModBlockEntities;
@@ -18,7 +19,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-public class JboxBlockEntity extends net.minecraft.world.level.block.entity.BlockEntity implements MenuProvider, IpAddressableDevice {
+public class JboxBlockEntity extends net.minecraft.world.level.block.entity.BlockEntity implements MenuProvider, IpAddressableDevice, PlacementOrderedNode {
     private static final int SCAN_INTERVAL_TICKS = 10;
     public static final int DEVICE_NONE = 0;
     public static final int DEVICE_BATTERY = 1;
@@ -34,17 +35,29 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
     private int pendingDeviceIp = DeviceAddress.DEVICE_DEFAULT;
     private int selectedDeviceSlot;
     private final int[] registeredDeviceIps = new int[MAX_CONNECTED_DEVICES];
+    private long placementOrder = -1L;
 
     public JboxBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.JBOX.get(), pos, state);
     }
 
     public void serverTick(Level level, BlockPos pos, BlockState state) {
+        ensurePlacementOrder(level);
+
         if (level.getGameTime() % SCAN_INTERVAL_TICKS != 0) {
             return;
         }
 
         syncTrackedDevice(level, pos);
+    }
+
+    private void ensurePlacementOrder(Level level) {
+        if (placementOrder >= 0 || level.isClientSide) {
+            return;
+        }
+
+        placementOrder = level.getGameTime();
+        setChanged();
     }
 
     private void syncTrackedDevice(Level level, BlockPos pos) {
@@ -97,6 +110,11 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         setChanged();
     }
 
+    @Override
+    public long getPlacementOrder() {
+        return placementOrder;
+    }
+
     public int getPendingDeviceIp() {
         return pendingDeviceIp;
     }
@@ -138,6 +156,10 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
 
     public int getSelectedDeviceRegistration() {
         return registeredDeviceIps[selectedDeviceSlot];
+    }
+
+    public boolean hasRegisteredIp(int ipAddress) {
+        return isRegisteredIp(ipAddress);
     }
 
     public boolean isTrackedDeviceOnline() {
@@ -225,7 +247,7 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
             return null;
         }
 
-        return Rs485NetworkHelper.findConnectedControllableDeviceByIp(level, pos, selectedIp);
+        return Rs485NetworkHelper.findConnectedControllableDeviceByIp(level, pos, selectedIp, this);
     }
 
     private boolean isRegisteredIp(int ipAddress) {
@@ -286,6 +308,7 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         tag.putInt("pendingDeviceIp", pendingDeviceIp);
         tag.putInt("selectedDeviceSlot", selectedDeviceSlot);
         tag.putIntArray("registeredDeviceIps", registeredDeviceIps);
+        tag.putLong("placementOrder", placementOrder);
     }
 
     @Override
@@ -299,6 +322,7 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         ipAddress = tag.contains("ipAddress") ? tag.getInt("ipAddress") : DeviceAddress.JBOX_DEFAULT;
         pendingDeviceIp = tag.contains("pendingDeviceIp") ? tag.getInt("pendingDeviceIp") : DeviceAddress.DEVICE_DEFAULT;
         selectedDeviceSlot = Math.max(0, Math.min(MAX_CONNECTED_DEVICES - 1, tag.getInt("selectedDeviceSlot")));
+        placementOrder = tag.contains("placementOrder") ? tag.getLong("placementOrder") : -1L;
 
         int[] savedIps = tag.getIntArray("registeredDeviceIps");
         for (int i = 0; i < registeredDeviceIps.length; i++) {

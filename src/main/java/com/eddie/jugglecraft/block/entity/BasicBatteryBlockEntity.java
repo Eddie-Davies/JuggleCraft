@@ -4,6 +4,7 @@ import com.eddie.jugglecraft.energy.EnergyTransferHelper;
 import com.eddie.jugglecraft.logic.BatteryChargeMode;
 import com.eddie.jugglecraft.logic.DeviceAddress;
 import com.eddie.jugglecraft.logic.IpAddressableDevice;
+import com.eddie.jugglecraft.logic.PlacementOrderedNode;
 import com.eddie.jugglecraft.menu.BasicBatteryMenu;
 import com.eddie.jugglecraft.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -23,7 +24,7 @@ import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implements MenuProvider, IpAddressableDevice {
+public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implements MenuProvider, IpAddressableDevice, PlacementOrderedNode {
     private static final int CAPACITY = 100000;
     private static final int MAX_TRANSFER = 200;
 
@@ -70,6 +71,7 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
     private LazyOptional<IEnergyStorage> batteryEnergyCapability = LazyOptional.empty();
     private BatteryChargeMode chargeMode = BatteryChargeMode.CHARGING;
     private int ipAddress = DeviceAddress.DEVICE_DEFAULT;
+    private long placementOrder = -1L;
 
     public BasicBatteryBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.BASIC_BATTERY.get(), pos, state, CAPACITY, MAX_TRANSFER, MAX_TRANSFER);
@@ -77,10 +79,21 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
     }
 
     public void serverTick(Level level, BlockPos pos, BlockState state) {
+        ensurePlacementOrder(level);
+
         if (chargeMode == BatteryChargeMode.DISCHARGING && energyStorage.getEnergyStored() > 0
                 && EnergyTransferHelper.pushEnergyToNeighbors(level, pos, exposedEnergyStorage, MAX_TRANSFER) > 0) {
             setChanged();
         }
+    }
+
+    private void ensurePlacementOrder(Level level) {
+        if (placementOrder >= 0 || level.isClientSide) {
+            return;
+        }
+
+        placementOrder = level.getGameTime();
+        setChanged();
     }
 
     public BatteryChargeMode getChargeMode() {
@@ -110,6 +123,11 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
     public void setIpAddress(int ipAddress) {
         this.ipAddress = ipAddress;
         setChanged();
+    }
+
+    @Override
+    public long getPlacementOrder() {
+        return placementOrder;
     }
 
     public String describeStatus() {
@@ -152,6 +170,7 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
         super.saveAdditional(tag);
         tag.putInt("chargeMode", chargeMode.ordinal());
         tag.putInt("ipAddress", ipAddress);
+        tag.putLong("placementOrder", placementOrder);
     }
 
     @Override
@@ -159,6 +178,7 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
         super.load(tag);
         chargeMode = BatteryChargeMode.byId(tag.getInt("chargeMode"));
         ipAddress = tag.contains("ipAddress") ? tag.getInt("ipAddress") : DeviceAddress.DEVICE_DEFAULT;
+        placementOrder = tag.contains("placementOrder") ? tag.getLong("placementOrder") : -1L;
     }
 
     @Override

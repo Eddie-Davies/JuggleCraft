@@ -3,6 +3,7 @@ package com.eddie.jugglecraft.block.entity;
 import com.eddie.jugglecraft.energy.EnergyTransferHelper;
 import com.eddie.jugglecraft.logic.DeviceAddress;
 import com.eddie.jugglecraft.logic.IpAddressableDevice;
+import com.eddie.jugglecraft.logic.PlacementOrderedNode;
 import com.eddie.jugglecraft.menu.CoalGeneratorMenu;
 import com.eddie.jugglecraft.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -26,7 +27,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implements MenuProvider, IpAddressableDevice {
+public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implements MenuProvider, IpAddressableDevice, PlacementOrderedNode {
     private static final int GENERATION_PER_TICK = 40;
     private static final int MAX_OUTPUT_PER_TICK = GENERATION_PER_TICK;
 
@@ -42,6 +43,7 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
     private int maxBurnTime;
     private boolean generatorEnabled = true;
     private int ipAddress = DeviceAddress.DEVICE_DEFAULT;
+    private long placementOrder = -1L;
 
     public CoalGeneratorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.COAL_GENERATOR.get(), pos, state, 0, 0, 0);
@@ -49,6 +51,7 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
     }
 
     public void serverTick(Level level, BlockPos pos, BlockState state) {
+        ensurePlacementOrder(level);
         boolean changed = false;
 
         if (generatorEnabled) {
@@ -66,6 +69,15 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
         if (changed) {
             setChanged();
         }
+    }
+
+    private void ensurePlacementOrder(Level level) {
+        if (placementOrder >= 0 || level.isClientSide) {
+            return;
+        }
+
+        placementOrder = level.getGameTime();
+        setChanged();
     }
 
     public int getBurnTime() {
@@ -97,6 +109,11 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
     public void setIpAddress(int ipAddress) {
         this.ipAddress = ipAddress;
         setChanged();
+    }
+
+    @Override
+    public long getPlacementOrder() {
+        return placementOrder;
     }
 
     public boolean isGeneratorEnabled() {
@@ -187,6 +204,7 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
         tag.putInt("maxBurnTime", maxBurnTime);
         tag.putBoolean("generatorEnabled", generatorEnabled);
         tag.putInt("ipAddress", ipAddress);
+        tag.putLong("placementOrder", placementOrder);
     }
 
     @Override
@@ -197,6 +215,7 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
         maxBurnTime = tag.getInt("maxBurnTime");
         generatorEnabled = tag.getBoolean("generatorEnabled");
         ipAddress = tag.contains("ipAddress") ? tag.getInt("ipAddress") : DeviceAddress.DEVICE_DEFAULT;
+        placementOrder = tag.contains("placementOrder") ? tag.getLong("placementOrder") : -1L;
     }
 
     @Override
