@@ -33,13 +33,13 @@ All of them appear in the JuggleCraft creative tab.
 
 ### Purpose
 
-The Coal Generator burns furnace fuel, stores FE internally, and pushes that FE into adjacent FE receivers when enabled.
+The Coal Generator burns furnace fuel and pushes FE directly into adjacent FE receivers when enabled.
 
 ### Core Behaviour
 
-- Internal capacity: `16000 FE`
+- Internal capacity: `0 FE`
 - Generation rate while burning: `40 FE/t`
-- Maximum push rate: `80 FE/t`
+- Maximum push rate: `40 FE/t`
 - Fuel slot count: `1`
 - Fuel type: any item accepted by Forge burn-time logic for smelting fuel
 
@@ -52,10 +52,10 @@ The Coal Generator burns furnace fuel, stores FE internally, and pushes that FE 
 
 ### Enabled And Disabled States
 
-- `On`: the generator burns fuel, produces FE, and pushes FE to adjacent FE receivers.
-- `Off`: the generator does not burn fuel, does not generate FE, and does not push FE out.
+- `On`: the generator consumes fuel, produces `40 FE/t`, and immediately pushes that FE to adjacent FE receivers.
+- `Off`: the generator does not burn fuel and does not generate or push FE.
 
-If the generator is turned off while it already contains stored FE, that energy remains stored until the block is turned on again or another future mechanic consumes it.
+If no adjacent receiver accepts FE while the generator is burning, that tick's generated FE is lost because the generator no longer buffers energy internally.
 
 ### Generator Menu
 
@@ -70,7 +70,7 @@ The generator menu currently provides:
 
 - It can charge a `Basic Battery` placed adjacent to it, but only if the battery is in `Charging` mode.
 - A `J-Box` mounted on the generator can toggle the generator on or off.
-- An `FE to Redstone Transformer` mounted on the generator can output redstone strength based on the generator's current FE buffer.
+- An `FE to Redstone Transformer` mounted on the generator now reads live generation state instead of a stored FE buffer.
 
 ## Basic Battery
 
@@ -224,26 +224,29 @@ If the attached block is removed or is not FE-capable, the transformer cannot re
 
 ### How It Works
 
-- The transformer checks the FE stored in the attached device.
-- It compares the current FE to the device's maximum FE capacity.
-- It outputs a redstone signal from `0` to `15` based on that fill ratio.
+- The transformer checks the attached device on a device-specific tick rate.
+- It consumes energy over time from the attached device while outputting a signal.
+- It outputs a redstone signal based on the attached device type.
 
 Examples:
 
-- `0% full` -> redstone `0`
-- `50% full` -> roughly redstone `7`
-- `100% full` -> redstone `15`
+- `Basic Battery at 0% full` -> redstone `0`
+- `Basic Battery at 50% full` -> roughly redstone `7`
+- `Basic Battery at 100% full` -> redstone `15`
+- `Coal Generator while actively burning` -> redstone `15`
+- `Coal Generator while idle or disabled` -> redstone `0`
 
 ### Important Behaviour Notes
 
-- The transformer does not consume FE.
-- It is a sensor, not a converter that burns energy into redstone.
-- It reads stored FE from the attached device's energy capability.
+- The transformer now consumes FE over time while it is producing a non-zero redstone signal.
+- On a `Basic Battery`, it updates every `5` ticks and drains `25 FE` per update, which is `100 FE/s`.
+- On a `Coal Generator`, it updates every tick and drains the equivalent of `40 FE/t` by consuming the generator's remaining burn time faster.
+- On FE storage blocks, the redstone level still reflects the device fill ratio.
 
 That means:
 
-- On a `Basic Battery`, the signal reflects how full the battery is.
-- On a `Coal Generator`, the signal reflects how much FE is currently stored inside the generator buffer.
+- On a `Basic Battery`, the signal reflects how full the battery is, but keeping that signal active slowly drains the battery.
+- On a `Coal Generator`, the signal reflects whether the generator is actively producing FE, and the attached transformer makes the fuel burn faster.
 
 ## Recipes
 

@@ -52,8 +52,8 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         } else if (MountedDeviceHelper.getAttachedBlockEntity(level, pos, state) instanceof CoalGeneratorBlockEntity coalGeneratorBlockEntity) {
             nextDeviceType = DEVICE_GENERATOR;
             nextControlState = coalGeneratorBlockEntity.isGeneratorEnabled() ? 1 : 0;
-            nextEnergy = coalGeneratorBlockEntity.getStoredEnergy();
-            nextCapacity = coalGeneratorBlockEntity.getEnergyCapacity();
+            nextEnergy = coalGeneratorBlockEntity.getCurrentOutputPerTick();
+            nextCapacity = coalGeneratorBlockEntity.getMaxOutputPerTick();
         }
 
         if (attachedDeviceType != nextDeviceType || trackedControlState != nextControlState

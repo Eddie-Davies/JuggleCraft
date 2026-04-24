@@ -25,9 +25,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implements MenuProvider {
-    private static final int CAPACITY = 16000;
     private static final int GENERATION_PER_TICK = 40;
-    private static final int MAX_OUTPUT_PER_TICK = 80;
+    private static final int MAX_OUTPUT_PER_TICK = GENERATION_PER_TICK;
 
     private final ItemStackHandler itemHandler = new ItemStackHandler(1) {
         @Override
@@ -42,7 +41,7 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
     private boolean generatorEnabled = true;
 
     public CoalGeneratorBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.COAL_GENERATOR.get(), pos, state, CAPACITY, 0, MAX_OUTPUT_PER_TICK);
+        super(ModBlockEntities.COAL_GENERATOR.get(), pos, state, 0, 0, 0);
         this.itemHandlerLazyOptional = LazyOptional.of(() -> itemHandler);
     }
 
@@ -50,18 +49,14 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
         boolean changed = false;
 
         if (generatorEnabled) {
-            if (burnTime > 0) {
-                burnTime--;
-                energyStorage.addEnergy(GENERATION_PER_TICK);
-                changed = true;
-            }
-
-            if (burnTime <= 0 && energyStorage.getEnergyStored() <= energyStorage.getMaxEnergyStored() - GENERATION_PER_TICK) {
+            if (burnTime <= 0) {
                 changed |= tryStartBurningFuel();
             }
 
-            if (energyStorage.getEnergyStored() > 0) {
-                changed |= EnergyTransferHelper.pushEnergyToNeighbors(level, pos, energyStorage, MAX_OUTPUT_PER_TICK) > 0;
+            if (burnTime > 0) {
+                burnTime--;
+                changed = true;
+                EnergyTransferHelper.pushEnergyToNeighbors(level, pos, GENERATION_PER_TICK, MAX_OUTPUT_PER_TICK);
             }
         }
 
@@ -78,6 +73,18 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
         return maxBurnTime;
     }
 
+    public boolean isBurning() {
+        return burnTime > 0;
+    }
+
+    public int getCurrentOutputPerTick() {
+        return generatorEnabled && isBurning() ? GENERATION_PER_TICK : 0;
+    }
+
+    public int getMaxOutputPerTick() {
+        return MAX_OUTPUT_PER_TICK;
+    }
+
     public boolean isGeneratorEnabled() {
         return generatorEnabled;
     }
@@ -88,8 +95,23 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
     }
 
     public String describeStatus() {
-        return String.format("Coal Generator enabled=%s fuel=%d/%d energy=%d/%d FE",
-                generatorEnabled, burnTime, Math.max(maxBurnTime, 0), getStoredEnergy(), getEnergyCapacity());
+        return String.format("Coal Generator enabled=%s fuel=%d/%d output=%d FE/t",
+            generatorEnabled, burnTime, Math.max(maxBurnTime, 0), GENERATION_PER_TICK);
+    }
+
+    public boolean consumeEnergyForMountedTransformer(int energyAmount) {
+        if (energyAmount <= 0 || !generatorEnabled || burnTime <= 0) {
+            return false;
+        }
+
+        int extraBurnTicks = (energyAmount + GENERATION_PER_TICK - 1) / GENERATION_PER_TICK;
+        if (burnTime < extraBurnTicks) {
+            return false;
+        }
+
+        burnTime -= extraBurnTicks;
+        setChanged();
+        return true;
     }
 
     public ItemStackHandler getItemHandler() {
@@ -109,8 +131,8 @@ public class CoalGeneratorBlockEntity extends AbstractEnergyBlockEntity implemen
                 return switch (index) {
                     case 0 -> burnTime;
                     case 1 -> maxBurnTime;
-                    case 2 -> getStoredEnergy();
-                    case 3 -> getEnergyCapacity();
+                    case 2 -> getCurrentOutputPerTick();
+                    case 3 -> getMaxOutputPerTick();
                     case 4 -> isGeneratorEnabled() ? 1 : 0;
                     default -> 0;
                 };

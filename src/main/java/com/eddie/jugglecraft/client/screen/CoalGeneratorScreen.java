@@ -63,7 +63,7 @@ public class CoalGeneratorScreen extends AbstractContainerScreen<CoalGeneratorMe
 
         if (isHovering(118, 20, 10, 50, mouseX, mouseY)) {
             guiGraphics.renderTooltip(font,
-                    Component.literal(menu.getEnergyStored() + "/" + menu.getEnergyCapacity() + " FE"),
+                    Component.literal(menu.getEnergyStored() + "/" + menu.getEnergyCapacity() + " FE/t"),
                     mouseX,
                     mouseY);
         }
@@ -72,7 +72,7 @@ public class CoalGeneratorScreen extends AbstractContainerScreen<CoalGeneratorMe
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderLabels(guiGraphics, mouseX, mouseY);
-        guiGraphics.drawString(font, Component.literal(menu.getEnergyStored() + " FE"), 100, 74, 0x404040, false);
+        guiGraphics.drawString(font, Component.literal("Output: " + menu.getEnergyStored() + "/" + menu.getEnergyCapacity() + " FE/t"), 78, 74, 0x404040, false);
         guiGraphics.drawString(font, Component.literal(menu.isGeneratorEnabled() ? "State: ON" : "State: OFF"), 88, 36, 0x404040, false);
     }
 

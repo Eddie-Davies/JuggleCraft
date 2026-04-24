@@ -72,8 +72,8 @@ public class JboxScreen extends AbstractContainerScreen<JboxMenu> {
         super.renderLabels(guiGraphics, mouseX, mouseY);
         guiGraphics.drawString(font, Component.literal("Attached: " + getAttachedDeviceName()), 12, 24, 0xFFF3EBDD, false);
         guiGraphics.drawString(font, Component.literal("Control: ").append(getControlStateLabel()), 12, 36, 0xFFF3EBDD, false);
-        guiGraphics.drawString(font, Component.literal("Stored: " + menu.getTrackedEnergy() + " FE"), 12, 48, 0xFFF3EBDD, false);
-        guiGraphics.drawString(font, Component.literal("Capacity: " + menu.getTrackedCapacity() + " FE"), 12, 60, 0xFFF3EBDD, false);
+        guiGraphics.drawString(font, Component.literal(getEnergyLabel()), 12, 48, 0xFFF3EBDD, false);
+        guiGraphics.drawString(font, Component.literal(getCapacityLabel()), 12, 60, 0xFFF3EBDD, false);
     }
 
     private void pressMenuButton(int buttonId) {
@@ -103,6 +103,20 @@ public class JboxScreen extends AbstractContainerScreen<JboxMenu> {
             case JboxBlockEntity.DEVICE_BATTERY -> menu.getBatteryChargeMode().getDisplayName();
             case JboxBlockEntity.DEVICE_GENERATOR -> Component.literal(menu.isGeneratorEnabled() ? "ON" : "OFF");
             default -> Component.literal("Unavailable");
+        };
+    }
+
+    private String getEnergyLabel() {
+        return switch (menu.getAttachedDeviceType()) {
+            case JboxBlockEntity.DEVICE_GENERATOR -> "Output: " + menu.getTrackedEnergy() + " FE/t";
+            default -> "Stored: " + menu.getTrackedEnergy() + " FE";
+        };
+    }
+
+    private String getCapacityLabel() {
+        return switch (menu.getAttachedDeviceType()) {
+            case JboxBlockEntity.DEVICE_GENERATOR -> "Max Output: " + menu.getTrackedCapacity() + " FE/t";
+            default -> "Capacity: " + menu.getTrackedCapacity() + " FE";
         };
     }
 }

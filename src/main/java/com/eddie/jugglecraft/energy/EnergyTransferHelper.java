@@ -11,6 +11,41 @@ public final class EnergyTransferHelper {
     private EnergyTransferHelper() {
     }
 
+    public static int pushEnergyToNeighbors(Level level, BlockPos origin, int availableEnergy, int maxTransfer) {
+        if (level == null || availableEnergy <= 0 || maxTransfer <= 0) {
+            return 0;
+        }
+
+        int remaining = Math.min(maxTransfer, availableEnergy);
+        int transferred = 0;
+
+        for (Direction direction : Direction.values()) {
+            if (remaining <= 0) {
+                break;
+            }
+
+            BlockEntity neighbor = level.getBlockEntity(origin.relative(direction));
+            if (neighbor == null) {
+                continue;
+            }
+
+            IEnergyStorage target = neighbor.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite()).resolve().orElse(null);
+            if (target == null || !target.canReceive()) {
+                continue;
+            }
+
+            int accepted = target.receiveEnergy(remaining, false);
+            if (accepted <= 0) {
+                continue;
+            }
+
+            remaining -= accepted;
+            transferred += accepted;
+        }
+
+        return transferred;
+    }
+
     public static int pushEnergyToNeighbors(Level level, BlockPos origin, IEnergyStorage source, int maxTransfer) {
         if (level == null || maxTransfer <= 0) {
             return 0;

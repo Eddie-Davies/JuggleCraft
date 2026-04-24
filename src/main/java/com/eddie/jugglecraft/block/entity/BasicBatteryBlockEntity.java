@@ -89,6 +89,15 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
         setChanged();
     }
 
+    public boolean consumeEnergyForMountedTransformer(int energyAmount) {
+        if (energyAmount <= 0 || energyStorage.extractEnergy(energyAmount, true) < energyAmount) {
+            return false;
+        }
+
+        energyStorage.extractEnergy(energyAmount, false);
+        return true;
+    }
+
     public String describeStatus() {
         return String.format("Basic Battery mode=%s energy=%d/%d FE", chargeMode.name(), getStoredEnergy(), getEnergyCapacity());
     }
