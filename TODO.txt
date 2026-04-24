@@ -1,0 +1,3 @@
+NEXT JOBS:
+
+REfactor Device menus to be usable
