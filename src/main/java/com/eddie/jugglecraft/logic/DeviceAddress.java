@@ -1,6 +1,7 @@
 package com.eddie.jugglecraft.logic;
 
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.Nullable;
 
 public final class DeviceAddress {
     public static final int OCTET_COUNT = 4;
@@ -39,5 +40,40 @@ public final class DeviceAddress {
                 + getOctet(address, 1) + "."
                 + getOctet(address, 2) + "."
                 + getOctet(address, 3);
+    }
+
+    public static String toEditableString(int address) {
+        return address == 0 ? "" : toString(address);
+    }
+
+    public static @Nullable Integer tryParse(String text) {
+        String trimmed = text.trim();
+        if (trimmed.isEmpty()) {
+            return 0;
+        }
+
+        String[] parts = trimmed.split("\\.");
+        if (parts.length != OCTET_COUNT) {
+            return null;
+        }
+
+        int[] octets = new int[OCTET_COUNT];
+        for (int i = 0; i < parts.length; i++) {
+            if (parts[i].isEmpty()) {
+                return null;
+            }
+
+            try {
+                int value = Integer.parseInt(parts[i]);
+                if (value < 0 || value > 255) {
+                    return null;
+                }
+                octets[i] = value;
+            } catch (NumberFormatException exception) {
+                return null;
+            }
+        }
+
+        return pack(octets[0], octets[1], octets[2], octets[3]);
     }
 }

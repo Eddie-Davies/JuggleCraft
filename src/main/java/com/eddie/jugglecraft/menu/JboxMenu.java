@@ -25,6 +25,7 @@ public class JboxMenu extends AbstractContainerMenu {
     public static final int LOCAL_IP_INCREMENT_BASE = 20;
     public static final int TARGET_IP_DECREMENT_BASE = 30;
     public static final int TARGET_IP_INCREMENT_BASE = 40;
+    public static final int CONTROL_SLOT_BUTTON_BASE = 100;
     private static final int PLAYER_INV_START = 0;
     private static final int PLAYER_INV_END = 27;
     private static final int HOTBAR_START = 27;
@@ -46,6 +47,10 @@ public class JboxMenu extends AbstractContainerMenu {
         addPlayerInventory(inventory);
         addPlayerHotbar(inventory);
         addDataSlots(data);
+    }
+
+    public JboxBlockEntity getBlockEntity() {
+        return blockEntity;
     }
 
     public int getAttachedDeviceType() {
@@ -132,6 +137,11 @@ public class JboxMenu extends AbstractContainerMenu {
             return true;
         }
 
+        if (id >= CONTROL_SLOT_BUTTON_BASE && id < CONTROL_SLOT_BUTTON_BASE + JboxBlockEntity.MAX_CONNECTED_DEVICES) {
+            blockEntity.controlSlot(id - CONTROL_SLOT_BUTTON_BASE);
+            return true;
+        }
+
         if (id >= LOCAL_IP_DECREMENT_BASE && id < LOCAL_IP_DECREMENT_BASE + 4) {
             blockEntity.adjustIpOctet(id - LOCAL_IP_DECREMENT_BASE, -1);
             return true;
@@ -192,14 +202,14 @@ public class JboxMenu extends AbstractContainerMenu {
     private void addPlayerInventory(Inventory inventory) {
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
-                addSlot(new Slot(inventory, column + row * 9 + 9, 8 + column * 18, 84 + row * 18));
+                addSlot(new Slot(inventory, column + row * 9 + 9, 12 + column * 18, 258 + row * 18));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory inventory) {
         for (int slot = 0; slot < 9; slot++) {
-            addSlot(new Slot(inventory, slot, 8 + slot * 18, 142));
+            addSlot(new Slot(inventory, slot, 12 + slot * 18, 316));
         }
     }
 

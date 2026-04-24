@@ -1,5 +1,6 @@
 package com.eddie.jugglecraft;
 
+import com.eddie.jugglecraft.network.ModMessages;
 import com.eddie.jugglecraft.registry.ModBlocks;
 import com.eddie.jugglecraft.registry.ModBlockEntities;
 import com.eddie.jugglecraft.registry.ModCreativeTabs;
@@ -25,6 +26,7 @@ public class JuggleCraft {
         ModItems.register(modEventBus);
         ModMenuTypes.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
+        ModMessages.register();
 
         MinecraftForge.EVENT_BUS.register(this);
     }

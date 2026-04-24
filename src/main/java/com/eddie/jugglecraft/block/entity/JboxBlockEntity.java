@@ -9,6 +9,9 @@ import com.eddie.jugglecraft.registry.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -35,8 +38,20 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
     private int ipAddress = DeviceAddress.JBOX_DEFAULT;
     private int pendingDeviceIp = DeviceAddress.DEVICE_DEFAULT;
     private int selectedDeviceSlot;
-    private final int[] registeredDeviceIps = new int[MAX_CONNECTED_DEVICES];
     private long placementOrder = -1L;
+
+    private final int[] registeredDeviceIps = new int[MAX_CONNECTED_DEVICES];
+    private final int[] slotDeviceTypes = new int[MAX_CONNECTED_DEVICES];
+    private final int[] slotControlStates = new int[MAX_CONNECTED_DEVICES];
+    private final int[] slotPowerFlows = new int[MAX_CONNECTED_DEVICES];
+    private final int[] slotStoredEnergy = new int[MAX_CONNECTED_DEVICES];
+    private final int[] slotCapacity = new int[MAX_CONNECTED_DEVICES];
+    private final int[] slotStateOfCharge = new int[MAX_CONNECTED_DEVICES];
+    private final int[] slotPrimaryMetric = new int[MAX_CONNECTED_DEVICES];
+    private final int[] slotSecondaryMetric = new int[MAX_CONNECTED_DEVICES];
+    private final int[] slotTertiaryMetric = new int[MAX_CONNECTED_DEVICES];
+    private final int[] slotQuaternaryMetric = new int[MAX_CONNECTED_DEVICES];
+    private final boolean[] slotOnline = new boolean[MAX_CONNECTED_DEVICES];
 
     public JboxBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.JBOX.get(), pos, state);
@@ -49,7 +64,9 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
             return;
         }
 
-        syncTrackedDevice(level, pos);
+        if (syncSlotSnapshots(level, pos)) {
+            markDirtyAndSync();
+        }
     }
 
     private void ensurePlacementOrder(Level level) {
@@ -58,52 +75,132 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         }
 
         placementOrder = level.getGameTime();
-        setChanged();
+        markDirtyAndSync();
     }
 
-    private void syncTrackedDevice(Level level, BlockPos pos) {
-        int nextDeviceType = DEVICE_NONE;
+    private boolean syncSlotSnapshots(Level level, BlockPos pos) {
+        boolean changed = false;
+        for (int slot = 0; slot < MAX_CONNECTED_DEVICES; slot++) {
+            changed |= syncSlotSnapshot(level, pos, slot);
+        }
+
+        changed |= syncLegacySelectedSnapshot();
+        return changed;
+    }
+
+    private boolean syncSlotSnapshot(Level level, BlockPos pos, int slot) {
+        BlockEntity blockEntity = getConnectedDeviceForSlot(level, pos, slot);
+        int nextType = DEVICE_NONE;
         int nextControlState = 0;
+        int nextPowerFlow = 0;
         int nextEnergy = 0;
         int nextCapacity = 0;
+        int nextStateOfCharge = 0;
+        int nextPrimaryMetric = 0;
+        int nextSecondaryMetric = 0;
+        int nextTertiaryMetric = 0;
+        int nextQuaternaryMetric = 0;
         boolean nextOnline = false;
 
-        BlockEntity blockEntity = getSelectedConnectedDevice(level, pos);
         if (blockEntity instanceof BasicBatteryBlockEntity basicBatteryBlockEntity) {
-            nextDeviceType = DEVICE_BATTERY;
+            nextType = DEVICE_BATTERY;
             nextControlState = basicBatteryBlockEntity.getChargeMode().ordinal();
+            nextPowerFlow = basicBatteryBlockEntity.getReportedPowerFlow();
             nextEnergy = basicBatteryBlockEntity.getStoredEnergy();
             nextCapacity = basicBatteryBlockEntity.getEnergyCapacity();
+            nextStateOfCharge = calculateStateOfCharge(nextEnergy, nextCapacity);
+            nextPrimaryMetric = nextStateOfCharge;
             nextOnline = true;
         } else if (blockEntity instanceof CoalGeneratorBlockEntity coalGeneratorBlockEntity) {
-            nextDeviceType = DEVICE_GENERATOR;
+            nextType = DEVICE_GENERATOR;
             nextControlState = coalGeneratorBlockEntity.isGeneratorEnabled() ? 1 : 0;
+            nextPowerFlow = coalGeneratorBlockEntity.getCurrentOutputPerTick();
             nextEnergy = coalGeneratorBlockEntity.getCurrentOutputPerTick();
             nextCapacity = coalGeneratorBlockEntity.getMaxOutputPerTick();
+            nextPrimaryMetric = coalGeneratorBlockEntity.getBurnTime();
+            nextSecondaryMetric = coalGeneratorBlockEntity.getMaxBurnTime();
             nextOnline = true;
         } else if (blockEntity instanceof SolarPanelBlockEntity solarPanelBlockEntity) {
-            nextDeviceType = DEVICE_SOLAR;
+            nextType = DEVICE_SOLAR;
             nextControlState = solarPanelBlockEntity.isPanelEnabled() ? 1 : 0;
-            nextEnergy = solarPanelBlockEntity.getCurrentGeneration();
-            nextCapacity = solarPanelBlockEntity.getMaxGenerationPerTick();
+            nextPowerFlow = solarPanelBlockEntity.getReportedPowerFlow();
+            nextEnergy = solarPanelBlockEntity.getStoredEnergy();
+            nextCapacity = solarPanelBlockEntity.getEnergyCapacity();
+            nextStateOfCharge = calculateStateOfCharge(nextEnergy, nextCapacity);
+            nextPrimaryMetric = solarPanelBlockEntity.getOverallEfficiencyPercent();
+            nextSecondaryMetric = solarPanelBlockEntity.getSunFactorPercent();
+            nextTertiaryMetric = solarPanelBlockEntity.getHeightFactorPercent();
+            nextQuaternaryMetric = Math.min(solarPanelBlockEntity.getWeatherFactorPercent(), solarPanelBlockEntity.getSkyFactorPercent());
             nextOnline = true;
         }
 
-        if (attachedDeviceType != nextDeviceType || trackedControlState != nextControlState
-                || trackedEnergy != nextEnergy || trackedCapacity != nextCapacity
-                || trackedDeviceOnline != nextOnline) {
-            attachedDeviceType = nextDeviceType;
+        if (slotDeviceTypes[slot] != nextType
+                || slotControlStates[slot] != nextControlState
+                || slotPowerFlows[slot] != nextPowerFlow
+                || slotStoredEnergy[slot] != nextEnergy
+                || slotCapacity[slot] != nextCapacity
+                || slotStateOfCharge[slot] != nextStateOfCharge
+                || slotPrimaryMetric[slot] != nextPrimaryMetric
+                || slotSecondaryMetric[slot] != nextSecondaryMetric
+                || slotTertiaryMetric[slot] != nextTertiaryMetric
+                || slotQuaternaryMetric[slot] != nextQuaternaryMetric
+                || slotOnline[slot] != nextOnline) {
+            slotDeviceTypes[slot] = nextType;
+            slotControlStates[slot] = nextControlState;
+            slotPowerFlows[slot] = nextPowerFlow;
+            slotStoredEnergy[slot] = nextEnergy;
+            slotCapacity[slot] = nextCapacity;
+            slotStateOfCharge[slot] = nextStateOfCharge;
+            slotPrimaryMetric[slot] = nextPrimaryMetric;
+            slotSecondaryMetric[slot] = nextSecondaryMetric;
+            slotTertiaryMetric[slot] = nextTertiaryMetric;
+            slotQuaternaryMetric[slot] = nextQuaternaryMetric;
+            slotOnline[slot] = nextOnline;
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean syncLegacySelectedSnapshot() {
+        int nextType = getSlotDeviceType(selectedDeviceSlot);
+        int nextControlState = getSlotControlState(selectedDeviceSlot);
+        int nextEnergy = switch (nextType) {
+            case DEVICE_GENERATOR -> getSlotPowerFlow(selectedDeviceSlot);
+            case DEVICE_SOLAR -> getSlotPowerFlow(selectedDeviceSlot);
+            default -> getSlotStoredEnergy(selectedDeviceSlot);
+        };
+        int nextCapacity = switch (nextType) {
+            case DEVICE_GENERATOR -> getSlotCapacity(selectedDeviceSlot);
+            case DEVICE_SOLAR -> getSlotCapacity(selectedDeviceSlot);
+            default -> getSlotCapacity(selectedDeviceSlot);
+        };
+        boolean nextOnline = isSlotOnline(selectedDeviceSlot);
+
+        if (attachedDeviceType != nextType || trackedControlState != nextControlState
+                || trackedEnergy != nextEnergy || trackedCapacity != nextCapacity || trackedDeviceOnline != nextOnline) {
+            attachedDeviceType = nextType;
             trackedControlState = nextControlState;
             trackedEnergy = nextEnergy;
             trackedCapacity = nextCapacity;
             trackedDeviceOnline = nextOnline;
-            setChanged();
+            return true;
         }
+
+        return false;
+    }
+
+    private int calculateStateOfCharge(int energy, int capacity) {
+        if (capacity <= 0) {
+            return 0;
+        }
+
+        return Math.min(100, energy * 100 / capacity);
     }
 
     public String describeStatus() {
-        return String.format("J-Box devices=%d selected=%d online=%s ip=%s target=%s",
-                getRegisteredDeviceCount(), selectedDeviceSlot + 1, trackedDeviceOnline, getIpAddressText(), DeviceAddress.toString(pendingDeviceIp));
+        return String.format("J-Box slots=%d localIp=%s selected=%d",
+                getRegisteredDeviceCount(), getIpAddressText(), selectedDeviceSlot + 1);
     }
 
     @Override
@@ -113,8 +210,12 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
 
     @Override
     public void setIpAddress(int ipAddress) {
+        if (this.ipAddress == ipAddress) {
+            return;
+        }
+
         this.ipAddress = ipAddress;
-        setChanged();
+        markDirtyAndSync();
     }
 
     @Override
@@ -126,9 +227,17 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         return pendingDeviceIp;
     }
 
+    public void setPendingDeviceIp(int pendingDeviceIp) {
+        if (this.pendingDeviceIp == pendingDeviceIp) {
+            return;
+        }
+
+        this.pendingDeviceIp = pendingDeviceIp;
+        markDirtyAndSync();
+    }
+
     public void adjustPendingDeviceIpOctet(int octetIndex, int delta) {
-        pendingDeviceIp = DeviceAddress.adjustOctet(pendingDeviceIp, octetIndex, delta);
-        setChanged();
+        setPendingDeviceIp(DeviceAddress.adjustOctet(pendingDeviceIp, octetIndex, delta));
     }
 
     public int getSelectedDeviceSlot() {
@@ -137,18 +246,16 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
 
     public void selectPreviousDeviceSlot() {
         selectedDeviceSlot = (selectedDeviceSlot + MAX_CONNECTED_DEVICES - 1) % MAX_CONNECTED_DEVICES;
-        if (level != null) {
-            syncTrackedDevice(level, worldPosition);
+        if (syncLegacySelectedSnapshot()) {
+            markDirtyAndSync();
         }
-        setChanged();
     }
 
     public void selectNextDeviceSlot() {
         selectedDeviceSlot = (selectedDeviceSlot + 1) % MAX_CONNECTED_DEVICES;
-        if (level != null) {
-            syncTrackedDevice(level, worldPosition);
+        if (syncLegacySelectedSnapshot()) {
+            markDirtyAndSync();
         }
-        setChanged();
     }
 
     public int getRegisteredDeviceCount() {
@@ -189,22 +296,78 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         return trackedCapacity;
     }
 
-    public boolean addPendingDevice() {
-        if (level == null || pendingDeviceIp == 0 || isRegisteredIp(pendingDeviceIp)) {
-            return false;
+    public int getSlotIp(int slot) {
+        return isValidSlot(slot) ? registeredDeviceIps[slot] : 0;
+    }
+
+    public void setSlotIp(int slot, int ipAddress) {
+        if (!isValidSlot(slot) || registeredDeviceIps[slot] == ipAddress) {
+            return;
         }
 
-        BlockEntity blockEntity = Rs485NetworkHelper.findConnectedControllableDeviceByIp(level, worldPosition, pendingDeviceIp);
-        if (!Rs485NetworkHelper.isControllableDevice(blockEntity)) {
+        registeredDeviceIps[slot] = ipAddress;
+        if (level != null) {
+            syncSlotSnapshot(level, worldPosition, slot);
+            syncLegacySelectedSnapshot();
+        }
+        markDirtyAndSync();
+    }
+
+    public int getSlotDeviceType(int slot) {
+        return isValidSlot(slot) ? slotDeviceTypes[slot] : DEVICE_NONE;
+    }
+
+    public int getSlotControlState(int slot) {
+        return isValidSlot(slot) ? slotControlStates[slot] : 0;
+    }
+
+    public int getSlotPowerFlow(int slot) {
+        return isValidSlot(slot) ? slotPowerFlows[slot] : 0;
+    }
+
+    public int getSlotStoredEnergy(int slot) {
+        return isValidSlot(slot) ? slotStoredEnergy[slot] : 0;
+    }
+
+    public int getSlotCapacity(int slot) {
+        return isValidSlot(slot) ? slotCapacity[slot] : 0;
+    }
+
+    public int getSlotStateOfCharge(int slot) {
+        return isValidSlot(slot) ? slotStateOfCharge[slot] : 0;
+    }
+
+    public int getSlotPrimaryMetric(int slot) {
+        return isValidSlot(slot) ? slotPrimaryMetric[slot] : 0;
+    }
+
+    public int getSlotSecondaryMetric(int slot) {
+        return isValidSlot(slot) ? slotSecondaryMetric[slot] : 0;
+    }
+
+    public int getSlotTertiaryMetric(int slot) {
+        return isValidSlot(slot) ? slotTertiaryMetric[slot] : 0;
+    }
+
+    public int getSlotQuaternaryMetric(int slot) {
+        return isValidSlot(slot) ? slotQuaternaryMetric[slot] : 0;
+    }
+
+    public boolean isSlotOnline(int slot) {
+        return isValidSlot(slot) && slotOnline[slot];
+    }
+
+    public boolean addPendingDevice() {
+        if (pendingDeviceIp == 0 || isRegisteredIp(pendingDeviceIp)) {
             return false;
         }
 
         for (int slot = 0; slot < registeredDeviceIps.length; slot++) {
             if (registeredDeviceIps[slot] == 0) {
-                registeredDeviceIps[slot] = pendingDeviceIp;
+                setSlotIp(slot, pendingDeviceIp);
                 selectedDeviceSlot = slot;
-                syncTrackedDevice(level, worldPosition);
-                setChanged();
+                syncLegacySelectedSnapshot();
+                markDirtyAndSync();
                 return true;
             }
         }
@@ -213,54 +376,79 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
     }
 
     public boolean removeSelectedDevice() {
-        if (registeredDeviceIps[selectedDeviceSlot] == 0) {
+        return removeSlot(selectedDeviceSlot);
+    }
+
+    public boolean removeSlot(int slot) {
+        if (!isValidSlot(slot) || registeredDeviceIps[slot] == 0) {
             return false;
         }
 
-        registeredDeviceIps[selectedDeviceSlot] = 0;
-        attachedDeviceType = DEVICE_NONE;
-        trackedControlState = 0;
-        trackedEnergy = 0;
-        trackedCapacity = 0;
-        trackedDeviceOnline = false;
-        setChanged();
+        registeredDeviceIps[slot] = 0;
+        clearSlotSnapshot(slot);
+        syncLegacySelectedSnapshot();
+        markDirtyAndSync();
         return true;
     }
 
     public boolean controlAttachedDevice() {
+        return controlSlot(selectedDeviceSlot);
+    }
+
+    public boolean controlSlot(int slot) {
         if (level == null) {
             return false;
         }
 
-        BlockEntity blockEntity = getSelectedConnectedDevice(level, worldPosition);
+        BlockEntity blockEntity = getConnectedDeviceForSlot(level, worldPosition, slot);
         if (blockEntity instanceof BasicBatteryBlockEntity basicBatteryBlockEntity) {
             basicBatteryBlockEntity.cycleChargeMode();
-            syncTrackedDevice(level, worldPosition);
+            if (syncSlotSnapshot(level, worldPosition, slot) | syncLegacySelectedSnapshot()) {
+                markDirtyAndSync();
+            }
             return true;
         }
 
         if (blockEntity instanceof CoalGeneratorBlockEntity coalGeneratorBlockEntity) {
             coalGeneratorBlockEntity.toggleGeneratorEnabled();
-            syncTrackedDevice(level, worldPosition);
+            if (syncSlotSnapshot(level, worldPosition, slot) | syncLegacySelectedSnapshot()) {
+                markDirtyAndSync();
+            }
             return true;
         }
 
         if (blockEntity instanceof SolarPanelBlockEntity solarPanelBlockEntity) {
             solarPanelBlockEntity.togglePanelEnabled();
-            syncTrackedDevice(level, worldPosition);
+            if (syncSlotSnapshot(level, worldPosition, slot) | syncLegacySelectedSnapshot()) {
+                markDirtyAndSync();
+            }
             return true;
         }
 
         return false;
     }
 
-    private @Nullable BlockEntity getSelectedConnectedDevice(Level level, BlockPos pos) {
-        int selectedIp = getSelectedDeviceRegistration();
+    private @Nullable BlockEntity getConnectedDeviceForSlot(Level level, BlockPos pos, int slot) {
+        int selectedIp = getSlotIp(slot);
         if (selectedIp == 0) {
             return null;
         }
 
         return Rs485NetworkHelper.findConnectedControllableDeviceByIp(level, pos, selectedIp, this);
+    }
+
+    private void clearSlotSnapshot(int slot) {
+        slotDeviceTypes[slot] = DEVICE_NONE;
+        slotControlStates[slot] = 0;
+        slotPowerFlows[slot] = 0;
+        slotStoredEnergy[slot] = 0;
+        slotCapacity[slot] = 0;
+        slotStateOfCharge[slot] = 0;
+        slotPrimaryMetric[slot] = 0;
+        slotSecondaryMetric[slot] = 0;
+        slotTertiaryMetric[slot] = 0;
+        slotQuaternaryMetric[slot] = 0;
+        slotOnline[slot] = false;
     }
 
     private boolean isRegisteredIp(int ipAddress) {
@@ -271,6 +459,17 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         }
 
         return false;
+    }
+
+    private boolean isValidSlot(int slot) {
+        return slot >= 0 && slot < MAX_CONNECTED_DEVICES;
+    }
+
+    private void markDirtyAndSync() {
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
     }
 
     @Override
@@ -321,6 +520,17 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         tag.putInt("pendingDeviceIp", pendingDeviceIp);
         tag.putInt("selectedDeviceSlot", selectedDeviceSlot);
         tag.putIntArray("registeredDeviceIps", registeredDeviceIps);
+        tag.putIntArray("slotDeviceTypes", slotDeviceTypes);
+        tag.putIntArray("slotControlStates", slotControlStates);
+        tag.putIntArray("slotPowerFlows", slotPowerFlows);
+        tag.putIntArray("slotStoredEnergy", slotStoredEnergy);
+        tag.putIntArray("slotCapacity", slotCapacity);
+        tag.putIntArray("slotStateOfCharge", slotStateOfCharge);
+        tag.putIntArray("slotPrimaryMetric", slotPrimaryMetric);
+        tag.putIntArray("slotSecondaryMetric", slotSecondaryMetric);
+        tag.putIntArray("slotTertiaryMetric", slotTertiaryMetric);
+        tag.putIntArray("slotQuaternaryMetric", slotQuaternaryMetric);
+        tag.putIntArray("slotOnline", encodeBooleanArray(slotOnline));
         tag.putLong("placementOrder", placementOrder);
     }
 
@@ -337,9 +547,52 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
         selectedDeviceSlot = Math.max(0, Math.min(MAX_CONNECTED_DEVICES - 1, tag.getInt("selectedDeviceSlot")));
         placementOrder = tag.contains("placementOrder") ? tag.getLong("placementOrder") : -1L;
 
-        int[] savedIps = tag.getIntArray("registeredDeviceIps");
-        for (int i = 0; i < registeredDeviceIps.length; i++) {
-            registeredDeviceIps[i] = i < savedIps.length ? savedIps[i] : 0;
+        copyIntoFixedArray(tag.getIntArray("registeredDeviceIps"), registeredDeviceIps);
+        copyIntoFixedArray(tag.getIntArray("slotDeviceTypes"), slotDeviceTypes);
+        copyIntoFixedArray(tag.getIntArray("slotControlStates"), slotControlStates);
+        copyIntoFixedArray(tag.getIntArray("slotPowerFlows"), slotPowerFlows);
+        copyIntoFixedArray(tag.getIntArray("slotStoredEnergy"), slotStoredEnergy);
+        copyIntoFixedArray(tag.getIntArray("slotCapacity"), slotCapacity);
+        copyIntoFixedArray(tag.getIntArray("slotStateOfCharge"), slotStateOfCharge);
+        copyIntoFixedArray(tag.getIntArray("slotPrimaryMetric"), slotPrimaryMetric);
+        copyIntoFixedArray(tag.getIntArray("slotSecondaryMetric"), slotSecondaryMetric);
+        copyIntoFixedArray(tag.getIntArray("slotTertiaryMetric"), slotTertiaryMetric);
+        copyIntoFixedArray(tag.getIntArray("slotQuaternaryMetric"), slotQuaternaryMetric);
+        decodeBooleanArray(tag.getIntArray("slotOnline"), slotOnline);
+    }
+
+    @Override
+    public CompoundTag getUpdateTag() {
+        return saveWithoutMetadata();
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        load(tag);
+    }
+
+    @Override
+    public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    private void copyIntoFixedArray(int[] source, int[] target) {
+        for (int i = 0; i < target.length; i++) {
+            target[i] = i < source.length ? source[i] : 0;
+        }
+    }
+
+    private int[] encodeBooleanArray(boolean[] source) {
+        int[] encoded = new int[source.length];
+        for (int i = 0; i < source.length; i++) {
+            encoded[i] = source[i] ? 1 : 0;
+        }
+        return encoded;
+    }
+
+    private void decodeBooleanArray(int[] source, boolean[] target) {
+        for (int i = 0; i < target.length; i++) {
+            target[i] = i < source.length && source[i] != 0;
         }
     }
 }

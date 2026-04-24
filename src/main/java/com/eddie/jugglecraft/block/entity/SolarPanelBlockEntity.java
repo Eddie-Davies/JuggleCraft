@@ -171,6 +171,18 @@ public class SolarPanelBlockEntity extends AbstractEnergyBlockEntity implements 
         return skyFactorPercent;
     }
 
+    public int getOverallEfficiencyPercent() {
+        if (!panelEnabled || MAX_GENERATION_PER_TICK <= 0) {
+            return 0;
+        }
+
+        return Math.min(100, currentGeneration * 100 / MAX_GENERATION_PER_TICK);
+    }
+
+    public int getReportedPowerFlow() {
+        return panelEnabled ? currentGeneration : 0;
+    }
+
     @Override
     public int getIpAddress() {
         return ipAddress;

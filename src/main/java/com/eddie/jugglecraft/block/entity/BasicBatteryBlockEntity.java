@@ -72,6 +72,8 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
     private BatteryChargeMode chargeMode = BatteryChargeMode.CHARGING;
     private int ipAddress = DeviceAddress.DEVICE_DEFAULT;
     private long placementOrder = -1L;
+    private int lastSampledEnergy = -1;
+    private int reportedPowerFlow;
 
     public BasicBatteryBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.BASIC_BATTERY.get(), pos, state, CAPACITY, MAX_TRANSFER, MAX_TRANSFER);
@@ -81,8 +83,22 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
     public void serverTick(Level level, BlockPos pos, BlockState state) {
         ensurePlacementOrder(level);
 
+        boolean changed = false;
+
         if (chargeMode == BatteryChargeMode.DISCHARGING && energyStorage.getEnergyStored() > 0
                 && EnergyTransferHelper.pushEnergyToNeighbors(level, pos, exposedEnergyStorage, MAX_TRANSFER) > 0) {
+            changed = true;
+        }
+
+        int currentEnergy = energyStorage.getEnergyStored();
+        int nextReportedPowerFlow = lastSampledEnergy < 0 ? 0 : lastSampledEnergy - currentEnergy;
+        if (reportedPowerFlow != nextReportedPowerFlow) {
+            reportedPowerFlow = nextReportedPowerFlow;
+            changed = true;
+        }
+
+        lastSampledEnergy = currentEnergy;
+        if (changed) {
             setChanged();
         }
     }
@@ -128,6 +144,10 @@ public class BasicBatteryBlockEntity extends AbstractEnergyBlockEntity implement
     @Override
     public long getPlacementOrder() {
         return placementOrder;
+    }
+
+    public int getReportedPowerFlow() {
+        return reportedPowerFlow;
     }
 
     public String describeStatus() {
