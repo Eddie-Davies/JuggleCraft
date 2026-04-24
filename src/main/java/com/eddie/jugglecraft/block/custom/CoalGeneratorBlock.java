@@ -10,6 +10,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -25,10 +26,38 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 public class CoalGeneratorBlock extends HorizontalDirectionalBlock implements EntityBlock {
+    private static final VoxelShape NORTH_SHAPE = Shapes.or(
+        Block.box(1.0, 0.0, 1.0, 15.0, 10.0, 15.0),
+        Block.box(2.0, 10.0, 2.0, 10.0, 14.0, 14.0),
+        Block.box(11.0, 10.0, 4.0, 14.0, 16.0, 8.0),
+        Block.box(4.0, 3.0, 0.0, 12.0, 8.0, 1.0)
+    );
+    private static final VoxelShape EAST_SHAPE = Shapes.or(
+        Block.box(1.0, 0.0, 1.0, 15.0, 10.0, 15.0),
+        Block.box(2.0, 10.0, 2.0, 14.0, 14.0, 10.0),
+        Block.box(8.0, 10.0, 11.0, 12.0, 16.0, 14.0),
+        Block.box(15.0, 3.0, 4.0, 16.0, 8.0, 12.0)
+    );
+    private static final VoxelShape SOUTH_SHAPE = Shapes.or(
+        Block.box(1.0, 0.0, 1.0, 15.0, 10.0, 15.0),
+        Block.box(6.0, 10.0, 2.0, 14.0, 14.0, 14.0),
+        Block.box(2.0, 10.0, 8.0, 5.0, 16.0, 12.0),
+        Block.box(4.0, 3.0, 15.0, 12.0, 8.0, 16.0)
+    );
+    private static final VoxelShape WEST_SHAPE = Shapes.or(
+        Block.box(1.0, 0.0, 1.0, 15.0, 10.0, 15.0),
+        Block.box(2.0, 10.0, 6.0, 14.0, 14.0, 14.0),
+        Block.box(4.0, 10.0, 2.0, 8.0, 16.0, 5.0),
+        Block.box(0.0, 3.0, 4.0, 1.0, 8.0, 12.0)
+    );
+
     public CoalGeneratorBlock() {
         super(BlockBehaviour.Properties.of()
                 .mapColor(MapColor.METAL)
@@ -61,6 +90,16 @@ public class CoalGeneratorBlock extends HorizontalDirectionalBlock implements En
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return switch (state.getValue(FACING)) {
+            case EAST -> EAST_SHAPE;
+            case SOUTH -> SOUTH_SHAPE;
+            case WEST -> WEST_SHAPE;
+            default -> NORTH_SHAPE;
+        };
     }
 
     @Nullable
