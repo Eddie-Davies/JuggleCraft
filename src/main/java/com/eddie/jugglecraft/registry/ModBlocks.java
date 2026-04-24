@@ -6,6 +6,7 @@ import com.eddie.jugglecraft.block.custom.CoalGeneratorBlock;
 import com.eddie.jugglecraft.block.custom.FeToRedstoneTransformerBlock;
 import com.eddie.jugglecraft.block.custom.JboxBlock;
 import com.eddie.jugglecraft.block.custom.Rs485WireBlock;
+import com.eddie.jugglecraft.block.custom.SolarPanelBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -21,6 +22,7 @@ public class ModBlocks {
     public static final RegistryObject<Block> BASIC_BATTERY = BLOCKS.register("basic_battery", BasicBatteryBlock::new);
     public static final RegistryObject<Block> FE_TO_REDSTONE_TRANSFORMER = BLOCKS.register("fe_to_redstone_transformer", FeToRedstoneTransformerBlock::new);
     public static final RegistryObject<Block> RS485_WIRE = BLOCKS.register("rs485_wire", Rs485WireBlock::new);
+    public static final RegistryObject<Block> SOLAR_PANEL = BLOCKS.register("solar_panel", SolarPanelBlock::new);
 
     public static void register(IEventBus eventBus) {
         BLOCKS.register(eventBus);

@@ -2,6 +2,7 @@ package com.eddie.jugglecraft.util;
 
 import com.eddie.jugglecraft.block.entity.BasicBatteryBlockEntity;
 import com.eddie.jugglecraft.block.entity.CoalGeneratorBlockEntity;
+import com.eddie.jugglecraft.block.entity.SolarPanelBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockGetter;
@@ -31,7 +32,9 @@ public final class MountedDeviceHelper {
 
     public static boolean canAttachToControllableDevice(BlockGetter level, BlockPos pos, Direction facing) {
         BlockEntity blockEntity = level.getBlockEntity(getAttachedBlockPos(pos, facing));
-        return blockEntity instanceof CoalGeneratorBlockEntity || blockEntity instanceof BasicBatteryBlockEntity;
+        return blockEntity instanceof CoalGeneratorBlockEntity
+                || blockEntity instanceof BasicBatteryBlockEntity
+                || blockEntity instanceof SolarPanelBlockEntity;
     }
 
     public static boolean canAttachToEnergyDevice(BlockGetter level, BlockPos pos, Direction facing) {

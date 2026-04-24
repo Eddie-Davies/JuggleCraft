@@ -4,6 +4,7 @@ import com.eddie.jugglecraft.menu.BasicBatteryMenu;
 import com.eddie.jugglecraft.JuggleCraft;
 import com.eddie.jugglecraft.menu.CoalGeneratorMenu;
 import com.eddie.jugglecraft.menu.JboxMenu;
+import com.eddie.jugglecraft.menu.SolarPanelMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -20,6 +21,9 @@ public class ModMenuTypes {
 
     public static final RegistryObject<MenuType<CoalGeneratorMenu>> COAL_GENERATOR = MENU_TYPES.register("coal_generator",
             () -> IForgeMenuType.create(CoalGeneratorMenu::new));
+
+    public static final RegistryObject<MenuType<SolarPanelMenu>> SOLAR_PANEL = MENU_TYPES.register("solar_panel",
+            () -> IForgeMenuType.create(SolarPanelMenu::new));
 
         public static final RegistryObject<MenuType<JboxMenu>> JBOX = MENU_TYPES.register("jbox",
             () -> IForgeMenuType.create(JboxMenu::new));

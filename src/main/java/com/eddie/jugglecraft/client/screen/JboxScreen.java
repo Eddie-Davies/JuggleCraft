@@ -115,6 +115,7 @@ public class JboxScreen extends AbstractContainerScreen<JboxMenu> {
         return switch (menu.getAttachedDeviceType()) {
             case JboxBlockEntity.DEVICE_BATTERY -> Component.literal("Cycle Battery Mode");
             case JboxBlockEntity.DEVICE_GENERATOR -> Component.literal(menu.isGeneratorEnabled() ? "Turn Generator Off" : "Turn Generator On");
+            case JboxBlockEntity.DEVICE_SOLAR -> Component.literal(menu.isGeneratorEnabled() ? "Disable Panel" : "Enable Panel");
             default -> Component.literal(menu.getSelectedDeviceRegistration() == 0 ? "No Device Selected" : "Device Offline");
         };
     }
@@ -123,6 +124,7 @@ public class JboxScreen extends AbstractContainerScreen<JboxMenu> {
         return switch (menu.getAttachedDeviceType()) {
             case JboxBlockEntity.DEVICE_BATTERY -> "Basic Battery";
             case JboxBlockEntity.DEVICE_GENERATOR -> "Coal Generator";
+            case JboxBlockEntity.DEVICE_SOLAR -> "Solar Panel";
             default -> menu.getSelectedDeviceRegistration() == 0 ? "None" : "Unreachable";
         };
     }
@@ -131,6 +133,7 @@ public class JboxScreen extends AbstractContainerScreen<JboxMenu> {
         return switch (menu.getAttachedDeviceType()) {
             case JboxBlockEntity.DEVICE_BATTERY -> menu.getBatteryChargeMode().getDisplayName();
             case JboxBlockEntity.DEVICE_GENERATOR -> Component.literal(menu.isGeneratorEnabled() ? "ON" : "OFF");
+            case JboxBlockEntity.DEVICE_SOLAR -> Component.literal(menu.isGeneratorEnabled() ? "ON" : "OFF");
             default -> Component.literal(menu.getSelectedDeviceRegistration() == 0 ? "Unassigned" : "Unavailable");
         };
     }
@@ -138,6 +141,7 @@ public class JboxScreen extends AbstractContainerScreen<JboxMenu> {
     private String getEnergyLabel() {
         return switch (menu.getAttachedDeviceType()) {
             case JboxBlockEntity.DEVICE_GENERATOR -> "Output: " + menu.getTrackedEnergy() + " FE/t";
+            case JboxBlockEntity.DEVICE_SOLAR -> "Output: " + menu.getTrackedEnergy() + " FE/t";
             case JboxBlockEntity.DEVICE_BATTERY -> "Stored: " + menu.getTrackedEnergy() + " FE";
             default -> "Energy: --";
         };
@@ -146,6 +150,7 @@ public class JboxScreen extends AbstractContainerScreen<JboxMenu> {
     private String getCapacityLabel() {
         return switch (menu.getAttachedDeviceType()) {
             case JboxBlockEntity.DEVICE_GENERATOR -> "Max Output: " + menu.getTrackedCapacity() + " FE/t";
+            case JboxBlockEntity.DEVICE_SOLAR -> "Max Output: " + menu.getTrackedCapacity() + " FE/t";
             case JboxBlockEntity.DEVICE_BATTERY -> "Capacity: " + menu.getTrackedCapacity() + " FE";
             default -> "Capacity: --";
         };
@@ -166,7 +171,9 @@ public class JboxScreen extends AbstractContainerScreen<JboxMenu> {
     }
 
     private String getEnergyUnitSuffix() {
-        return menu.getAttachedDeviceType() == JboxBlockEntity.DEVICE_GENERATOR ? " FE/t" : " FE";
+        return menu.getAttachedDeviceType() == JboxBlockEntity.DEVICE_GENERATOR || menu.getAttachedDeviceType() == JboxBlockEntity.DEVICE_SOLAR
+                ? " FE/t"
+                : " FE";
     }
 
     private void addIpButtons(int baseX, int baseY, int decrementBase, int incrementBase) {

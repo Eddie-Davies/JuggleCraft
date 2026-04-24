@@ -8,6 +8,7 @@ The current JuggleCraft feature set now includes:
 
 - A Coal Generator with a fuel slot and an on or off control.
 - A Basic Battery with explicit charge states.
+- A custom Solar Panel that generates FE from sunlight and altitude.
 - A J-Box that can register and control up to 16 connected devices by IP.
 - An RS485 Wire block that extends a local controller network.
 - An FE to Redstone Transformer that reads FE from an attached device and outputs a proportional redstone signal.
@@ -17,6 +18,7 @@ At this stage, the design is local-network and IP-based.
 
 - The J-Box can be placed freely and discovers devices through direct adjacency or connected RS485 wire paths.
 - Each J-Box, Coal Generator, and Basic Battery has a configurable IP address in its menu.
+- Each J-Box, Coal Generator, Basic Battery, and Solar Panel has a configurable IP address in its menu.
 - A J-Box can only control devices whose IP has been registered into one of its 16 device slots.
 - The FE to Redstone Transformer must also be placed directly onto an FE-capable device.
 - There is no remote routing system outside the local RS485-connected graph yet.
@@ -28,6 +30,7 @@ The currently relevant gameplay blocks are:
 - `J-Box`
 - `Coal Generator`
 - `Basic Battery`
+- `Solar Panel`
 - `RS485 Wire`
 - `FE to Redstone Transformer`
 
@@ -134,9 +137,49 @@ The battery menu currently provides:
 ### Interaction With Other Blocks
 
 - If the battery is next to an enabled `Coal Generator`, it will only fill while set to `Charging`.
+- If the battery is next to an active `Solar Panel`, it will fill while set to `Charging`.
 - If the battery is set to `Discharging`, it can supply adjacent FE receivers.
 - A `J-Box` mounted on the battery can cycle the battery mode without opening the battery directly.
 - An `FE to Redstone Transformer` mounted on the battery can output redstone strength based on how full the battery is.
+
+## Solar Panel
+
+### Purpose
+
+The Solar Panel is a custom JuggleCraft generator that converts sunlight into FE and stores that FE in a local internal buffer before pushing it to adjacent FE receivers.
+
+### Core Behaviour
+
+- Internal capacity: `12000 FE`
+- Peak output: `120 FE/t`
+- Maximum push rate: `120 FE/t`
+- Default IP: `192.168.1.1`
+
+### Generation Factors
+
+Solar generation changes in real time based on:
+
+- `Sun position`: production ramps up after sunrise, peaks at midday, and falls back to zero at sunset.
+- `Day cycle`: no production is generated during the night.
+- `Sky access`: blocks above the panel stop generation completely.
+- `Weather`: rain reduces output and thunder reduces it further.
+- `Height`: higher placement increases output efficiency above sea level.
+
+### Solar Panel Menu
+
+The solar panel menu currently provides:
+
+- An FE bar for stored internal energy
+- A generation bar for current FE/t output
+- A toggle button to enable or disable the panel
+- Readouts for sun, height, weather, and sky efficiency
+- IP address controls
+
+### Interaction With Other Blocks
+
+- It can charge adjacent `Basic Battery` blocks.
+- A `J-Box` can add and control a solar panel by IP over direct adjacency or RS485 wire.
+- Multiple solar panels can share an IP, and the J-Box will select the closest one first.
 
 ## J-Box
 
@@ -155,6 +198,7 @@ Compatible controllable devices are currently:
 
 - `Coal Generator`
 - `Basic Battery`
+- `Solar Panel`
 
 Only devices that are physically reachable through that local graph and whose IP has been added to the J-Box can be controlled from the J-Box menu.
 
@@ -163,6 +207,7 @@ Only devices that are physically reachable through that local graph and whose IP
 - Default J-Box IP: `10.172.152.1`
 - Default generator IP: `192.168.1.1`
 - Default battery IP: `192.168.1.1`
+- Default solar panel IP: `192.168.1.1`
 
 Because generators and batteries share the same default IP, you must usually change device IPs before adding multiple devices to one J-Box.
 
@@ -196,6 +241,19 @@ Its control button toggles:
 
 - `Generator On`
 - `Generator Off`
+
+#### Selected Solar Panel
+
+The J-Box reads:
+
+- Solar panel enabled or disabled state
+- Current FE/t production
+- Maximum FE/t production
+
+Its control button toggles:
+
+- `Panel On`
+- `Panel Off`
 
 ### J-Box Menu
 
@@ -297,6 +355,7 @@ The project currently includes recipes for:
 - `J-Box`
 - `Coal Generator`
 - `Basic Battery`
+- `Solar Panel`
 - `FE to Redstone Transformer`
 
 The FE to Redstone Transformer recipe is:
@@ -364,6 +423,22 @@ Result:
 6. Use the control button to toggle the selected generator on or off.
 
 Result:
+
+- The J-Box can switch between registered generators and control the selected one.
+
+### Setup 5: Altitude-Sensitive Solar Generation
+
+1. Place a `Solar Panel` in an open area with clear sky access.
+2. Place a `Basic Battery` beside it and leave the battery in `Charging` mode.
+3. Open the solar panel menu and confirm the panel is enabled.
+4. Compare output at low elevation and higher elevation during clear midday conditions.
+
+Result:
+
+- The panel produces more FE at higher elevations.
+- Output rises and falls with the sun over the day.
+- Rain and thunder reduce production.
+- The battery fills from the panel's stored and pushed FE.
 
 - The J-Box acts as a controller for that generator only.
 

@@ -4,6 +4,7 @@ import com.eddie.jugglecraft.client.screen.BasicBatteryScreen;
 import com.eddie.jugglecraft.JuggleCraft;
 import com.eddie.jugglecraft.client.screen.CoalGeneratorScreen;
 import com.eddie.jugglecraft.client.screen.JboxScreen;
+import com.eddie.jugglecraft.client.screen.SolarPanelScreen;
 import com.eddie.jugglecraft.registry.ModMenuTypes;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraftforge.api.distmarker.Dist;
@@ -21,6 +22,7 @@ public final class ClientModEvents {
         event.enqueueWork(() -> {
             MenuScreens.register(ModMenuTypes.BASIC_BATTERY.get(), BasicBatteryScreen::new);
             MenuScreens.register(ModMenuTypes.COAL_GENERATOR.get(), CoalGeneratorScreen::new);
+            MenuScreens.register(ModMenuTypes.SOLAR_PANEL.get(), SolarPanelScreen::new);
             MenuScreens.register(ModMenuTypes.JBOX.get(), JboxScreen::new);
         });
     }

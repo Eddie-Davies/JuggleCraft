@@ -24,6 +24,7 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
     public static final int DEVICE_NONE = 0;
     public static final int DEVICE_BATTERY = 1;
     public static final int DEVICE_GENERATOR = 2;
+    public static final int DEVICE_SOLAR = 3;
     public static final int MAX_CONNECTED_DEVICES = 16;
 
     private int attachedDeviceType = DEVICE_NONE;
@@ -79,6 +80,12 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
             nextControlState = coalGeneratorBlockEntity.isGeneratorEnabled() ? 1 : 0;
             nextEnergy = coalGeneratorBlockEntity.getCurrentOutputPerTick();
             nextCapacity = coalGeneratorBlockEntity.getMaxOutputPerTick();
+            nextOnline = true;
+        } else if (blockEntity instanceof SolarPanelBlockEntity solarPanelBlockEntity) {
+            nextDeviceType = DEVICE_SOLAR;
+            nextControlState = solarPanelBlockEntity.isPanelEnabled() ? 1 : 0;
+            nextEnergy = solarPanelBlockEntity.getCurrentGeneration();
+            nextCapacity = solarPanelBlockEntity.getMaxGenerationPerTick();
             nextOnline = true;
         }
 
@@ -234,6 +241,12 @@ public class JboxBlockEntity extends net.minecraft.world.level.block.entity.Bloc
 
         if (blockEntity instanceof CoalGeneratorBlockEntity coalGeneratorBlockEntity) {
             coalGeneratorBlockEntity.toggleGeneratorEnabled();
+            syncTrackedDevice(level, worldPosition);
+            return true;
+        }
+
+        if (blockEntity instanceof SolarPanelBlockEntity solarPanelBlockEntity) {
+            solarPanelBlockEntity.togglePanelEnabled();
             syncTrackedDevice(level, worldPosition);
             return true;
         }

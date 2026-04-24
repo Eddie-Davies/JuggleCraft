@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "jugglecraft:block/solar_panel", "y": 0 },
+    "facing=east":  { "model": "jugglecraft:block/solar_panel", "y": 90 },
+    "facing=south": { "model": "jugglecraft:block/solar_panel", "y": 180 },
+    "facing=west":  { "model": "jugglecraft:block/solar_panel", "y": 270 }
+  }
+}

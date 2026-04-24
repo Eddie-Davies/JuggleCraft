@@ -3,6 +3,7 @@ package com.eddie.jugglecraft.logic;
 import com.eddie.jugglecraft.block.entity.BasicBatteryBlockEntity;
 import com.eddie.jugglecraft.block.entity.CoalGeneratorBlockEntity;
 import com.eddie.jugglecraft.block.entity.JboxBlockEntity;
+import com.eddie.jugglecraft.block.entity.SolarPanelBlockEntity;
 import com.eddie.jugglecraft.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -46,7 +47,9 @@ public final class Rs485NetworkHelper {
     }
 
     public static boolean isControllableDevice(@Nullable BlockEntity blockEntity) {
-        return blockEntity instanceof BasicBatteryBlockEntity || blockEntity instanceof CoalGeneratorBlockEntity;
+        return blockEntity instanceof BasicBatteryBlockEntity
+                || blockEntity instanceof CoalGeneratorBlockEntity
+                || blockEntity instanceof SolarPanelBlockEntity;
     }
 
     private static boolean isPreferredControllerForDevice(Level level, BlockEntity device, int ipAddress, JboxBlockEntity requester) {
