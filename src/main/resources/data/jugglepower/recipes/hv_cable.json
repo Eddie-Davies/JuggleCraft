@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ILI",
+    "RLR",
+    "ILI"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "R": { "item": "minecraft:redstone" },
+    "L": { "item": "jugglepower:lv_cable" }
+  },
+  "result": {
+    "item": "jugglepower:hv_cable",
+    "count": 8
+  }
+}

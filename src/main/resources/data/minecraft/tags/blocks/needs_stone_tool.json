@@ -4,6 +4,15 @@
     "jugglecraft:jbox",
     "jugglecraft:coal_generator",
     "jugglecraft:basic_battery",
-    "jugglecraft:fe_to_redstone_transformer"
+    "jugglecraft:fe_to_redstone_transformer",
+    "jugglepower:lv_cable",
+    "jugglepower:hv_cable",
+    "jugglepower:dc_cable",
+    "jugglepower:signal_cable",
+    "jugglepower:battery_cell",
+    "jugglepower:pv_cell",
+    "jugglepower:wind_turbine",
+    "jugglepower:electric_furnace",
+    "jugglepower:mosfet_switch"
   ]
 }

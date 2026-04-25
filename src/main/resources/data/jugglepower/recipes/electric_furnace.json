@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "III",
+    "RFR",
+    "CCC"
+  ],
+  "key": {
+    "I": { "item": "minecraft:iron_ingot" },
+    "R": { "item": "minecraft:redstone" },
+    "F": { "item": "minecraft:furnace" },
+    "C": { "item": "minecraft:copper_ingot" }
+  },
+  "result": {
+    "item": "jugglepower:electric_furnace"
+  }
+}

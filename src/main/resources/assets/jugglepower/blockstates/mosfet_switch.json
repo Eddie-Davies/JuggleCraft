@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "enabled=false": {
+      "model": "jugglepower:block/mosfet_switch_off"
+    },
+    "enabled=true": {
+      "model": "jugglepower:block/mosfet_switch_on"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "jugglepower:block/pv_cell"
+    }
+  }
+}

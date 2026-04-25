@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "CRC",
+    "RCR",
+    "CRC"
+  ],
+  "key": {
+    "C": { "item": "minecraft:redstone" },
+    "R": { "item": "minecraft:copper_ingot" }
+  },
+  "result": {
+    "item": "jugglepower:signal_cable",
+    "count": 8
+  }
+}

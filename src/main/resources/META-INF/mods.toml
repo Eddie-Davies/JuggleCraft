@@ -26,6 +26,14 @@ authors="Eddie Davies - Juggle" #optional
 description='''
 Industrial energy, storage, automation, and remote network control for Minecraft.
 '''
+[[mods]]
+modId="jugglepower"
+version="0.0.1"
+displayName="Juggle Power"
+authors="Eddie Davies - Juggle"
+description='''
+Tiered electrical engineering with strict HV, LV, DC, and signal power behavior.
+'''
 [[dependencies.${mod_id}]] #optional
     # the modid of the dependency
     modId="forge" #mandatory
@@ -44,6 +52,20 @@ Industrial energy, storage, automation, and remote network control for Minecraft
     modId="minecraft"
     mandatory=true
     # This version range declares a minimum of the current minecraft version up to but not including the next major version
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.jugglepower]]
+    modId="forge"
+    mandatory=true
+    versionRange="${forge_version_range}"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.jugglepower]]
+    modId="minecraft"
+    mandatory=true
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
