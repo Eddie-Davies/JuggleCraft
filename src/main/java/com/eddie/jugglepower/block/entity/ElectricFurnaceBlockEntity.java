@@ -4,6 +4,7 @@ import com.eddie.jugglepower.power.PowerTier;
 import com.eddie.jugglepower.registry.PowerBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -20,6 +21,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Optional;
 
 public class ElectricFurnaceBlockEntity extends AbstractTieredPowerBlockEntity {
@@ -107,6 +109,13 @@ public class ElectricFurnaceBlockEntity extends AbstractTieredPowerBlockEntity {
 
     public int getRequiredProgress() {
         return REQUIRED_PROGRESS;
+    }
+
+    @Override
+    public void appendPowerStateLines(List<Component> lines) {
+        super.appendPowerStateLines(lines);
+        lines.add(Component.literal("State: " + (enabled ? "ON" : "OFF")));
+        lines.add(Component.literal("Progress: " + progress + "/" + REQUIRED_PROGRESS));
     }
 
     public boolean tryInsertInput(Player player, ItemStack heldStack) {

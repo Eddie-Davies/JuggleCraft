@@ -4,9 +4,12 @@ import com.eddie.jugglepower.power.PowerTier;
 import com.eddie.jugglepower.registry.PowerBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class BatteryCellBlockEntity extends AbstractTieredPowerBlockEntity {
     private static final int CAPACITY = 200000;
@@ -41,6 +44,12 @@ public class BatteryCellBlockEntity extends AbstractTieredPowerBlockEntity {
 
     public BatteryCellMode getMode() {
         return mode;
+    }
+
+    @Override
+    public void appendPowerStateLines(List<Component> lines) {
+        super.appendPowerStateLines(lines);
+        lines.add(Component.literal("Mode: " + mode.name()));
     }
 
     public void cycleMode() {

@@ -5,9 +5,12 @@ import com.eddie.jugglepower.power.PowerTier;
 import com.eddie.jugglepower.registry.PowerBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class MosfetSwitchBlockEntity extends AbstractTieredPowerBlockEntity {
     private static final int CAPACITY = 8000;
@@ -51,6 +54,13 @@ public class MosfetSwitchBlockEntity extends AbstractTieredPowerBlockEntity {
     @Override
     public boolean isTierFaulted() {
         return faultTicks > 0;
+    }
+
+    @Override
+    public void appendPowerStateLines(List<Component> lines) {
+        super.appendPowerStateLines(lines);
+        boolean enabled = getBlockState().getValue(MosfetSwitchBlock.ENABLED);
+        lines.add(Component.literal("Gate: " + (enabled ? "OPEN" : "CLOSED")));
     }
 
     @Override

@@ -4,10 +4,13 @@ import com.eddie.jugglepower.power.PowerTier;
 import com.eddie.jugglepower.registry.PowerBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class WindTurbineBlockEntity extends AbstractTieredPowerBlockEntity {
     private static final int CAPACITY = 48000;
@@ -33,7 +36,7 @@ public class WindTurbineBlockEntity extends AbstractTieredPowerBlockEntity {
 
         if (currentGeneration > 0) {
             int before = getStoredEnergy();
-            energyStorage.receiveEnergy(currentGeneration, false);
+            energyStorage.addEnergy(currentGeneration);
             changed |= before != getStoredEnergy();
         }
 
@@ -63,6 +66,13 @@ public class WindTurbineBlockEntity extends AbstractTieredPowerBlockEntity {
 
     public int getCurrentGeneration() {
         return currentGeneration;
+    }
+
+    @Override
+    public void appendPowerStateLines(List<Component> lines) {
+        super.appendPowerStateLines(lines);
+        lines.add(Component.literal("State: " + (enabled ? "ON" : "OFF")));
+        lines.add(Component.literal("Generation: " + currentGeneration + " FE/t"));
     }
 
     @Override

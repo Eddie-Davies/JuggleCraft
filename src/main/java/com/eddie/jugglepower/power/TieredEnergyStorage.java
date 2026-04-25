@@ -33,6 +33,21 @@ public class TieredEnergyStorage extends EnergyStorage {
         onEnergyChanged();
     }
 
+    public int addEnergy(int amount) {
+        if (amount <= 0) {
+            return 0;
+        }
+
+        int accepted = Math.min(capacity - energy, amount);
+        if (accepted <= 0) {
+            return 0;
+        }
+
+        energy += accepted;
+        onEnergyChanged();
+        return accepted;
+    }
+
     protected void onEnergyChanged() {
     }
 }

@@ -1,12 +1,17 @@
 package com.eddie.jugglepower.block.entity;
 
 import com.eddie.jugglepower.power.PowerNetworkHelper;
+import com.eddie.jugglepower.power.PowerStateDisplayProvider;
 import com.eddie.jugglepower.power.PowerTier;
 import com.eddie.jugglepower.power.TieredEnergyStorage;
 import com.eddie.jugglepower.power.TieredPowerNode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -17,7 +22,9 @@ import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class AbstractTieredPowerBlockEntity extends BlockEntity implements TieredPowerNode {
+import java.util.List;
+
+public abstract class AbstractTieredPowerBlockEntity extends BlockEntity implements TieredPowerNode, PowerStateDisplayProvider {
     private final PowerTier powerTier;
     protected final TieredEnergyStorage energyStorage;
     private LazyOptional<IEnergyStorage> energyOptional = LazyOptional.empty();
@@ -67,6 +74,14 @@ public abstract class AbstractTieredPowerBlockEntity extends BlockEntity impleme
     }
 
     @Override
+    public void setChanged() {
+        super.setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putInt("energy", energyStorage.getEnergyStored());
@@ -76,6 +91,28 @@ public abstract class AbstractTieredPowerBlockEntity extends BlockEntity impleme
     public void load(CompoundTag tag) {
         super.load(tag);
         energyStorage.setStoredEnergy(tag.getInt("energy"));
+    }
+
+    @Override
+    public CompoundTag getUpdateTag() {
+        return saveWithoutMetadata();
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        load(tag);
+    }
+
+    @Override
+    public @Nullable Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void appendPowerStateLines(List<Component> lines) {
+        lines.add(Component.literal("Tier: " + getPowerTier().name()));
+        lines.add(Component.literal("Energy: " + getStoredEnergy() + "/" + getEnergyCapacity() + " FE"));
+        lines.add(Component.literal(isTierFaulted() ? "Fault: active" : "Fault: clear"));
     }
 
     @Override
