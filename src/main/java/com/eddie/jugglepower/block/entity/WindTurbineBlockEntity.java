@@ -26,7 +26,7 @@ public class WindTurbineBlockEntity extends AbstractTieredPowerBlockEntity {
     }
 
     public void serverTick(Level level, BlockPos pos, BlockState state) {
-        boolean changed = false;
+        boolean changed = beginThroughputTick(level);
 
         int nextGeneration = enabled ? calculateGeneration(level, pos) : 0;
         if (nextGeneration != currentGeneration) {
@@ -71,8 +71,12 @@ public class WindTurbineBlockEntity extends AbstractTieredPowerBlockEntity {
     @Override
     public void appendPowerStateLines(List<Component> lines) {
         super.appendPowerStateLines(lines);
+        double generationPercent = MAX_GENERATION <= 0 ? 0.0 : currentGeneration * 100.0 / MAX_GENERATION;
         lines.add(Component.literal("State: " + (enabled ? "ON" : "OFF")));
         lines.add(Component.literal("Generation: " + currentGeneration + " FE/t"));
+        lines.add(Component.literal("FE/t Peak: " + MAX_GENERATION));
+        lines.add(Component.literal("Output Utilization: " + formatPercent(generationPercent)));
+        lines.add(Component.literal("Line Limit: " + getPowerTier().getDefaultMaxTransfer() + " FE/t"));
     }
 
     @Override

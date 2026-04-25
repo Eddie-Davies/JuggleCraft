@@ -23,7 +23,7 @@ public class BatteryCellBlockEntity extends AbstractTieredPowerBlockEntity {
     }
 
     public void serverTick(Level level, BlockPos pos, BlockState state) {
-        boolean changed = false;
+        boolean changed = beginThroughputTick(level);
 
         if (faultTicks > 0) {
             faultTicks--;
@@ -50,6 +50,8 @@ public class BatteryCellBlockEntity extends AbstractTieredPowerBlockEntity {
     public void appendPowerStateLines(List<Component> lines) {
         super.appendPowerStateLines(lines);
         lines.add(Component.literal("Mode: " + mode.name()));
+        lines.add(Component.literal("SoC: " + formatPercent(getEnergyFillPercent())));
+        lines.add(Component.literal("I/O Limit: " + getPowerTier().getDefaultMaxTransfer() + " FE/t"));
     }
 
     public void cycleMode() {

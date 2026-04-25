@@ -23,7 +23,7 @@ public class MosfetSwitchBlockEntity extends AbstractTieredPowerBlockEntity {
     }
 
     public void serverTick(Level level, BlockPos pos, BlockState state) {
-        boolean changed = false;
+        boolean changed = beginThroughputTick(level);
 
         if (faultTicks > 0) {
             faultTicks--;
@@ -57,10 +57,21 @@ public class MosfetSwitchBlockEntity extends AbstractTieredPowerBlockEntity {
     }
 
     @Override
+    public boolean canRelayPower() {
+        if (level == null) {
+            return false;
+        }
+
+        return !isTierFaulted() && getBlockState().getValue(MosfetSwitchBlock.ENABLED);
+    }
+
+    @Override
     public void appendPowerStateLines(List<Component> lines) {
         super.appendPowerStateLines(lines);
         boolean enabled = getBlockState().getValue(MosfetSwitchBlock.ENABLED);
         lines.add(Component.literal("Gate: " + (enabled ? "OPEN" : "CLOSED")));
+        lines.add(Component.literal("Throughput Limit: " + getPowerTier().getDefaultMaxTransfer() + " FE/t"));
+        lines.add(Component.literal("Fault Ticks: " + faultTicks));
     }
 
     @Override

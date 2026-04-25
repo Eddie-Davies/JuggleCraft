@@ -48,7 +48,7 @@ public class ElectricFurnaceBlockEntity extends AbstractTieredPowerBlockEntity {
     }
 
     public void serverTick(Level level, BlockPos pos, BlockState state) {
-        boolean changed = false;
+        boolean changed = beginThroughputTick(level);
 
         if (faultTicks > 0) {
             faultTicks--;
@@ -114,8 +114,14 @@ public class ElectricFurnaceBlockEntity extends AbstractTieredPowerBlockEntity {
     @Override
     public void appendPowerStateLines(List<Component> lines) {
         super.appendPowerStateLines(lines);
+        double progressPercent = REQUIRED_PROGRESS <= 0 ? 0.0 : progress * 100.0 / REQUIRED_PROGRESS;
         lines.add(Component.literal("State: " + (enabled ? "ON" : "OFF")));
-        lines.add(Component.literal("Progress: " + progress + "/" + REQUIRED_PROGRESS));
+        lines.add(Component.literal("Progress: " + progress + "/" + REQUIRED_PROGRESS + " (" + formatPercent(progressPercent) + ")"));
+        lines.add(Component.literal("Draw: " + ENERGY_PER_TICK + " FE/t (active)"));
+        lines.add(Component.literal("Slots: input "
+                + (itemHandler.getStackInSlot(0).isEmpty() ? "empty" : "loaded")
+                + ", output "
+                + (itemHandler.getStackInSlot(1).isEmpty() ? "empty" : "loaded")));
     }
 
     public boolean tryInsertInput(Player player, ItemStack heldStack) {

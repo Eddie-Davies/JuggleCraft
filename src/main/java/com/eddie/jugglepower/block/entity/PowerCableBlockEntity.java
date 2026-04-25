@@ -2,11 +2,14 @@ package com.eddie.jugglepower.block.entity;
 
 import com.eddie.jugglepower.block.custom.PowerCableBlock;
 import com.eddie.jugglepower.power.PowerTier;
+import com.eddie.jugglepower.power.TieredPowerNode;
 import com.eddie.jugglepower.registry.PowerBlockEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +30,7 @@ public class PowerCableBlockEntity extends AbstractTieredPowerBlockEntity {
     }
 
     public void serverTick(Level level, BlockPos pos, BlockState state) {
-        boolean changed = false;
+        boolean changed = beginThroughputTick(level);
 
         if (faultTicks > 0) {
             faultTicks--;
@@ -71,9 +74,16 @@ public class PowerCableBlockEntity extends AbstractTieredPowerBlockEntity {
     }
 
     @Override
+    public boolean canRelayPower() {
+        return faultTicks == 0;
+    }
+
+    @Override
     public void appendPowerStateLines(List<Component> lines) {
         super.appendPowerStateLines(lines);
         lines.add(Component.literal("Cable fault ticks: " + faultTicks));
+        lines.add(Component.literal("Throughput Limit: " + getPowerTier().getDefaultMaxTransfer() + " FE/t"));
+        lines.add(Component.literal("Connected Tier Links: " + countConnectedTierLinks()));
     }
 
     @Override
@@ -103,5 +113,22 @@ public class PowerCableBlockEntity extends AbstractTieredPowerBlockEntity {
         }
 
         return PowerTier.LV;
+    }
+
+    private int countConnectedTierLinks() {
+        if (level == null) {
+            return 0;
+        }
+
+        int count = 0;
+        for (Direction direction : Direction.values()) {
+            BlockEntity neighbor = level.getBlockEntity(worldPosition.relative(direction));
+            if (neighbor instanceof TieredPowerNode tieredPowerNode
+                    && getPowerTier().isCompatibleWith(tieredPowerNode.getPowerTier())) {
+                count++;
+            }
+        }
+
+        return count;
     }
 }

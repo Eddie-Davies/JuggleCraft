@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class PvCellBlockEntity extends AbstractTieredPowerBlockEntity {
-    private static final int CAPACITY = 24000;
+    private static final int CAPACITY = 4000;
     private static final int MAX_GENERATION = 100;
 
     private boolean enabled = true;
@@ -23,11 +23,11 @@ public class PvCellBlockEntity extends AbstractTieredPowerBlockEntity {
 
     public PvCellBlockEntity(BlockPos pos, BlockState state) {
         super(PowerBlockEntities.PV_CELL.get(), pos, state, PowerTier.DC,
-                CAPACITY, 0, PowerTier.DC.getDefaultMaxTransfer());
+                CAPACITY, PowerTier.DC.getDefaultMaxTransfer(), PowerTier.DC.getDefaultMaxTransfer());
     }
 
     public void serverTick(Level level, BlockPos pos, BlockState state) {
-        boolean changed = false;
+        boolean changed = beginThroughputTick(level);
 
         int nextGeneration = enabled ? calculateGeneration(level, pos) : 0;
         if (nextGeneration != currentGeneration) {
@@ -45,7 +45,7 @@ public class PvCellBlockEntity extends AbstractTieredPowerBlockEntity {
             faultTicks--;
             changed = true;
         } else if (getStoredEnergy() > 0) {
-            int moved = pushToMatchedNeighbors(Math.min(getPowerTier().getDefaultMaxTransfer(), getStoredEnergy()));
+            int moved = pushThroughArray(Math.min(getPowerTier().getDefaultMaxTransfer(), getStoredEnergy()));
             if (moved > 0) {
                 changed = true;
             }
@@ -72,8 +72,13 @@ public class PvCellBlockEntity extends AbstractTieredPowerBlockEntity {
     @Override
     public void appendPowerStateLines(List<Component> lines) {
         super.appendPowerStateLines(lines);
+        double generationPercent = MAX_GENERATION <= 0 ? 0.0 : currentGeneration * 100.0 / MAX_GENERATION;
         lines.add(Component.literal("State: " + (enabled ? "ON" : "OFF")));
         lines.add(Component.literal("Generation: " + currentGeneration + " FE/t"));
+        lines.add(Component.literal("FE/t Peak: " + MAX_GENERATION));
+        lines.add(Component.literal("Output Utilization: " + formatPercent(generationPercent)));
+        lines.add(Component.literal("Line Limit: " + getPowerTier().getDefaultMaxTransfer() + " FE/t"));
+        lines.add(Component.literal("Array Relay Buffer: " + CAPACITY + " FE"));
     }
 
     @Override
@@ -87,6 +92,11 @@ public class PvCellBlockEntity extends AbstractTieredPowerBlockEntity {
     @Override
     public boolean isTierFaulted() {
         return faultTicks > 0;
+    }
+
+    @Override
+    public boolean canRelayPower() {
+        return !isTierFaulted();
     }
 
     @Override
@@ -129,5 +139,20 @@ public class PvCellBlockEntity extends AbstractTieredPowerBlockEntity {
         float heightFactor = 0.8f + heightNorm * 0.4f;
 
         return Math.round(MAX_GENERATION * sunFactor * weatherFactor * skyLightFactor * heightFactor);
+    }
+
+    private int pushThroughArray(int maxTransfer) {
+        if (level == null || level.isClientSide || maxTransfer <= 0) {
+            return 0;
+        }
+
+        int moved = pushToMatchedNeighbors(maxTransfer, neighbor -> !(neighbor instanceof PvCellBlockEntity));
+
+        int remaining = maxTransfer - moved;
+        if (remaining <= 0) {
+            return moved;
+        }
+
+        return moved + pushToMatchedNeighbors(remaining, neighbor -> neighbor instanceof PvCellBlockEntity);
     }
 }

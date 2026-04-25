@@ -1,6 +1,7 @@
 package com.eddie.jugglepower.power;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.junit.jupiter.api.Test;
 
@@ -8,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -31,6 +33,12 @@ class PowerNetworkHelperTest {
         assertEquals(120, moved);
         assertEquals(380, source.getStoredEnergy());
         assertEquals(120, target.getStoredEnergy());
+        assertEquals(120, source.getSentPower());
+        assertEquals(0, source.getReceivedPower());
+        assertEquals(Direction.EAST, source.getLastSentDirection());
+        assertEquals(0, target.getSentPower());
+        assertEquals(120, target.getReceivedPower());
+        assertEquals(Direction.WEST, target.getLastReceivedDirection());
         assertEquals(0, source.getFaultCount());
     }
 
@@ -81,13 +89,40 @@ class PowerNetworkHelperTest {
     }
 
     @Test
+    void relaysPowerAcrossAdjacentPvNodesToSingleCableOutput() {
+        BlockPos pvLeftPos = new BlockPos(0, 64, 0);
+        BlockPos pvRightPos = pvLeftPos.east();
+        BlockPos batteryPos = pvRightPos.east();
+
+        NodeFixture pvLeft = createNode(PowerTier.DC, 4000, 120, 120, 120);
+        NodeFixture pvRight = createNode(PowerTier.DC, 4000, 120, 120, 0, true);
+        NodeFixture battery = createNode(PowerTier.DC, 200000, 120, 120, 0);
+
+        PowerNetworkHelper.NeighborLookup lookup = lookupWithNodes(Map.of(
+                pvLeftPos, pvLeft.blockEntity,
+                pvRightPos, pvRight.blockEntity,
+                batteryPos, battery.blockEntity
+        ));
+
+        int moved = PowerNetworkHelper.pushToTierMatchedNeighbors(lookup, pvLeftPos, pvLeft.node, 120);
+
+        assertEquals(120, moved);
+        assertEquals(0, pvLeft.getStoredEnergy());
+        assertEquals(0, pvRight.getStoredEnergy());
+        assertEquals(120, battery.getStoredEnergy());
+        assertEquals(120, pvRight.getReceivedPower());
+        assertEquals(120, pvRight.getSentPower());
+        assertEquals(120, battery.getReceivedPower());
+    }
+
+    @Test
     void chargesBatteryAcrossDcCableWhenCableTicksBeforeSource() {
         BlockPos pvPos = new BlockPos(0, 64, 0);
         BlockPos cablePos = pvPos.east();
         BlockPos batteryPos = cablePos.east();
 
         NodeFixture pv = createNode(PowerTier.DC, 2000, 0, 120, 240);
-        NodeFixture cable = createNode(PowerTier.DC, 2000, 120, 120, 0);
+        NodeFixture cable = createNode(PowerTier.DC, 2000, 120, 120, 0, true);
         NodeFixture battery = createNode(PowerTier.DC, 2000, 120, 120, 0);
 
         PowerNetworkHelper.NeighborLookup lookup = lookupWithNodes(Map.of(
@@ -102,8 +137,9 @@ class PowerNetworkHelperTest {
 
         assertEquals(0, firstCableMoved);
         assertEquals(120, firstPvMoved);
-        assertEquals(120, secondCableMoved);
+        assertEquals(0, secondCableMoved);
         assertEquals(120, battery.getStoredEnergy());
+        assertEquals(0, cable.getStoredEnergy());
     }
 
     @Test
@@ -113,7 +149,7 @@ class PowerNetworkHelperTest {
         BlockPos batteryPos = cablePos.east();
 
         NodeFixture pv = createNode(PowerTier.DC, 2000, 0, 120, 240);
-        NodeFixture cable = createNode(PowerTier.DC, 2000, 120, 120, 0);
+        NodeFixture cable = createNode(PowerTier.DC, 2000, 120, 120, 0, true);
         NodeFixture battery = createNode(PowerTier.DC, 2000, 120, 120, 0);
 
         PowerNetworkHelper.NeighborLookup lookup = lookupWithNodes(Map.of(
@@ -126,15 +162,53 @@ class PowerNetworkHelperTest {
 
         assertEquals(120, pvMoved);
         assertEquals(120, pv.getStoredEnergy());
-        assertEquals(120, cable.getStoredEnergy());
-        assertEquals(0, battery.getStoredEnergy());
+        assertEquals(0, cable.getStoredEnergy());
+        assertEquals(120, battery.getStoredEnergy());
+        assertEquals(120, cable.getReceivedPower());
+        assertEquals(120, cable.getSentPower());
 
         int cableMoved = PowerNetworkHelper.pushToTierMatchedNeighbors(lookup, cablePos, cable.node, 120);
 
-        assertEquals(120, cableMoved);
+        assertEquals(0, cableMoved);
         assertEquals(120, pv.getStoredEnergy());
         assertEquals(0, cable.getStoredEnergy());
         assertEquals(120, battery.getStoredEnergy());
+    }
+
+    @Test
+    void deliversAcrossPvAndThreeCableRelaysInSingleCall() {
+        BlockPos pvLeftPos = new BlockPos(0, 64, 0);
+        BlockPos pvRightPos = pvLeftPos.east();
+        BlockPos cable1Pos = pvRightPos.east();
+        BlockPos cable2Pos = cable1Pos.east();
+        BlockPos cable3Pos = cable2Pos.east();
+        BlockPos batteryPos = cable3Pos.east();
+
+        NodeFixture pvLeft = createNode(PowerTier.DC, 4000, 120, 120, 120);
+        NodeFixture pvRight = createNode(PowerTier.DC, 4000, 120, 120, 0, true);
+        NodeFixture cable1 = createNode(PowerTier.DC, 4000, 120, 120, 0, true);
+        NodeFixture cable2 = createNode(PowerTier.DC, 4000, 120, 120, 0, true);
+        NodeFixture cable3 = createNode(PowerTier.DC, 4000, 120, 120, 0, true);
+        NodeFixture battery = createNode(PowerTier.DC, 200000, 120, 120, 0);
+
+        PowerNetworkHelper.NeighborLookup lookup = lookupWithNodes(Map.of(
+                pvLeftPos, pvLeft.blockEntity,
+                pvRightPos, pvRight.blockEntity,
+                cable1Pos, cable1.blockEntity,
+                cable2Pos, cable2.blockEntity,
+                cable3Pos, cable3.blockEntity,
+                batteryPos, battery.blockEntity
+        ));
+
+        int moved = PowerNetworkHelper.pushToTierMatchedNeighbors(lookup, pvLeftPos, pvLeft.node, 120);
+
+        assertEquals(120, moved);
+        assertEquals(0, pvLeft.getStoredEnergy());
+        assertEquals(120, battery.getStoredEnergy());
+        assertEquals(0, pvRight.getStoredEnergy());
+        assertEquals(0, cable1.getStoredEnergy());
+        assertEquals(0, cable2.getStoredEnergy());
+        assertEquals(0, cable3.getStoredEnergy());
     }
 
     @Test
@@ -179,6 +253,15 @@ class PowerNetworkHelperTest {
                                           int maxReceive,
                                           int maxExtract,
                                           int initialEnergy) {
+        return createNode(tier, capacity, maxReceive, maxExtract, initialEnergy, false);
+    }
+
+    private static NodeFixture createNode(PowerTier tier,
+                                          int capacity,
+                                          int maxReceive,
+                                          int maxExtract,
+                                          int initialEnergy,
+                                          boolean relayNode) {
         TieredEnergyStorage storage = new TieredEnergyStorage(capacity, maxReceive, maxExtract);
         storage.setStoredEnergy(initialEnergy);
 
@@ -189,6 +272,7 @@ class PowerNetworkHelperTest {
 
         when(node.getPowerTier()).thenReturn(tier);
         when(node.getTieredEnergyStorage()).thenReturn(storage);
+        when(node.canRelayPower()).thenReturn(relayNode);
         when(node.isTierFaulted()).thenAnswer(invocation -> faultState.faulted);
         doAnswer(invocation -> {
             faultState.faultCount++;
@@ -196,6 +280,16 @@ class PowerNetworkHelperTest {
             faultState.faulted = true;
             return null;
         }).when(node).markTierFault(nullable(PowerTier.class));
+        doAnswer(invocation -> {
+            faultState.lastReceivedDirection = invocation.getArgument(0, Direction.class);
+            faultState.receivedPower += invocation.getArgument(1, Integer.class);
+            return null;
+        }).when(node).onPowerReceived(nullable(Direction.class), anyInt());
+        doAnswer(invocation -> {
+            faultState.lastSentDirection = invocation.getArgument(0, Direction.class);
+            faultState.sentPower += invocation.getArgument(1, Integer.class);
+            return null;
+        }).when(node).onPowerSent(nullable(Direction.class), anyInt());
 
         return new NodeFixture(blockEntity, node, storage, faultState);
     }
@@ -229,6 +323,22 @@ class PowerNetworkHelperTest {
             return faultState.faultCount;
         }
 
+        private int getReceivedPower() {
+            return faultState.receivedPower;
+        }
+
+        private int getSentPower() {
+            return faultState.sentPower;
+        }
+
+        private Direction getLastReceivedDirection() {
+            return faultState.lastReceivedDirection;
+        }
+
+        private Direction getLastSentDirection() {
+            return faultState.lastSentDirection;
+        }
+
         private PowerTier getLastFaultNeighborTier() {
             return faultState.lastFaultNeighborTier;
         }
@@ -242,5 +352,9 @@ class PowerNetworkHelperTest {
         private int faultCount;
         private PowerTier lastFaultNeighborTier;
         private boolean faulted;
+        private int receivedPower;
+        private int sentPower;
+        private Direction lastReceivedDirection;
+        private Direction lastSentDirection;
     }
 }
