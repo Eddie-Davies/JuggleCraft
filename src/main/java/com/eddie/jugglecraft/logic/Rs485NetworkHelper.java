@@ -2,13 +2,16 @@ package com.eddie.jugglecraft.logic;
 
 import com.eddie.jugglecraft.block.entity.BasicBatteryBlockEntity;
 import com.eddie.jugglecraft.block.entity.CoalGeneratorBlockEntity;
+import com.eddie.jugglecraft.block.entity.FeToRedstoneTransformerBlockEntity;
 import com.eddie.jugglecraft.block.entity.JboxBlockEntity;
 import com.eddie.jugglecraft.block.entity.SolarPanelBlockEntity;
 import com.eddie.jugglecraft.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
@@ -52,6 +55,24 @@ public final class Rs485NetworkHelper {
                 || blockEntity instanceof SolarPanelBlockEntity;
     }
 
+    public static boolean isRs485Connectable(BlockGetter level, BlockPos pos) {
+        if (isRs485TraversableNode(level, pos)) {
+            return true;
+        }
+
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        return blockEntity instanceof JboxBlockEntity
+                || blockEntity instanceof BasicBatteryBlockEntity
+                || blockEntity instanceof CoalGeneratorBlockEntity
+                || blockEntity instanceof SolarPanelBlockEntity
+                || blockEntity instanceof FeToRedstoneTransformerBlockEntity;
+    }
+
+    public static boolean isRs485TraversableNode(BlockGetter level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        return state.is(ModBlocks.RS485_WIRE.get()) || state.is(ModBlocks.RS485_TERMINAL.get());
+    }
+
     private static boolean isPreferredControllerForDevice(Level level, BlockEntity device, int ipAddress, JboxBlockEntity requester) {
         ResolvedNode<JboxBlockEntity> resolvedNode = findBestReachableBlockEntity(level, device.getBlockPos(),
                 blockEntity -> blockEntity instanceof JboxBlockEntity jboxBlockEntity && jboxBlockEntity.hasRegisteredIp(ipAddress),
@@ -83,7 +104,7 @@ public final class Rs485NetworkHelper {
                 }
 
                 int nextDistance = currentNode.distance() + 1;
-                if (level.getBlockState(neighborPos).is(ModBlocks.RS485_WIRE.get())) {
+                if (isRs485TraversableNode(level, neighborPos)) {
                     visited.add(neighborPos);
                     frontier.add(new SearchNode(neighborPos, nextDistance));
                     continue;

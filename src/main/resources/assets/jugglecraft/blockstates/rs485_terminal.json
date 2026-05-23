@@ -1,0 +1,36 @@
+{
+  "multipart": [
+    {
+      "when": { "facing": "north" },
+      "apply": { "model": "jugglecraft:block/rs485_terminal", "y": 0 }
+    },
+    {
+      "when": { "facing": "east" },
+      "apply": { "model": "jugglecraft:block/rs485_terminal", "y": 90 }
+    },
+    {
+      "when": { "facing": "south" },
+      "apply": { "model": "jugglecraft:block/rs485_terminal", "y": 180 }
+    },
+    {
+      "when": { "facing": "west" },
+      "apply": { "model": "jugglecraft:block/rs485_terminal", "y": 270 }
+    },
+    {
+      "when": { "north": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_terminal_connector", "y": 0 }
+    },
+    {
+      "when": { "east": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_terminal_connector", "y": 90 }
+    },
+    {
+      "when": { "south": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_terminal_connector", "y": 180 }
+    },
+    {
+      "when": { "west": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_terminal_connector", "y": 270 }
+    }
+  ]
+}

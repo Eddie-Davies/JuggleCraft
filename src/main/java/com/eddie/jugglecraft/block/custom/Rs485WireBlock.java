@@ -1,5 +1,6 @@
 package com.eddie.jugglecraft.block.custom;
 
+import com.eddie.jugglecraft.logic.Rs485NetworkHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -112,7 +113,11 @@ public class Rs485WireBlock extends Block {
 
     private boolean canConnectTo(BlockGetter level, BlockPos pos, boolean isCeiling) {
         BlockState neighborState = level.getBlockState(pos);
-        return neighborState.is(this) && neighborState.getValue(CEILING) == isCeiling;
+        if (neighborState.is(this)) {
+            return neighborState.getValue(CEILING) == isCeiling;
+        }
+
+        return Rs485NetworkHelper.isRs485Connectable(level, pos);
     }
 
     @Override

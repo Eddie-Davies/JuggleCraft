@@ -17,8 +17,8 @@ The goal is to avoid building economy or faction systems before the item and pow
 - Coal Generator
 - Basic Battery
 - Solar Panel
-- RS485 Wire control network
-- RS485 Terminal placeholder block
+- RS485 Wire control network with floor and ceiling mounting
+- RS485 Terminal reactive switch block with copper connector visuals
 - FE to Redstone Transformer
 - Core item/block registrations, creative tab entries, recipes, and language support for the current block set
 - Floor and ceiling mounting support for RS485 Wire
@@ -27,7 +27,7 @@ The goal is to avoid building economy or faction systems before the item and pow
 
 - Guide and documentation cleanup
 - More structured backlog tracking for future content
-- RS485 expansion planning for more infrastructure blocks
+- RS485 expansion planning for more infrastructure blocks and visual polish
 ## Roadmap Summary
 
 | Phase | Focus | Status |
@@ -57,6 +57,7 @@ This is the current priority area.
 - Power Cable
 - Electrical Map
 - Cabinet
+- Battersea Power Station structure block / mega-structure concept
 - Any missing recipes for planned infrastructure blocks
 - Any item or block placeholders needed to support the upcoming industrial tier
 
@@ -75,12 +76,15 @@ Once the item foundation is in place, the next step is to make power distributio
 - Move beyond adjacency-only energy handling where needed.
 - Introduce actual power transport blocks.
 - Support larger industrial builds and microgrid-style sub-networks.
+- Make RS485 devices read as connected hardware visually, not just as isolated placeholder blocks.
 
 ### Planned Features
 
 - Power Cable for FE transport
 - Cabinet for enclosed micro power grids or local service networks
 - Electrical Map for visualizing or inspecting power networks
+- Reactive RS485 terminal and wire visuals that visually flow into connected devices
+- Battersea Power Station as a craftable, placeable, expensive large structure block with command-block-like behavior and consumable build cost
 - Improved power routing and distribution rules
 - Support for larger industrial items and machines
 - Optional distance loss, protection, or routing rules if they fit the design
@@ -131,6 +135,9 @@ This is deliberately deferred until the core power loop feels solid.
 
 ### Later Goals
 
+- Spawn-time faction choice between Juggle and Shell
+- Shell faction path: burning more fuel and earning more money while passive mobs gradually become hostile
+- Juggle faction path: greener power usage where animals can slowly produce or gift drops without dying for sustainable farming
 - Factions or groups that interact with the energy world
 - Currency or trade systems
 - Reputation, contracts, or progression tied to power infrastructure
@@ -173,7 +180,7 @@ This is deliberately deferred until the core power loop feels solid.
 
 ### Deferred Systems
 
-- Factions
+- Factions and faction selection
 - Money
 - Trade/economy systems
 - Reputation systems
