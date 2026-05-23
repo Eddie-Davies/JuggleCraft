@@ -1,0 +1,21 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "terminal": "minecraft:block/copper_block",
+    "particle": "minecraft:block/copper_block"
+  },
+  "elements": [
+    {
+      "from": [5, 5, 5],
+      "to": [11, 11, 11],
+      "faces": {
+        "north": { "uv": [5, 5, 11, 11], "texture": "#terminal" },
+        "south": { "uv": [5, 5, 11, 11], "texture": "#terminal" },
+        "west": { "uv": [5, 5, 11, 11], "texture": "#terminal" },
+        "east": { "uv": [5, 5, 11, 11], "texture": "#terminal" },
+        "up": { "uv": [5, 5, 11, 11], "texture": "#terminal" },
+        "down": { "uv": [5, 5, 11, 11], "texture": "#terminal" }
+      }
+    }
+  ]
+}

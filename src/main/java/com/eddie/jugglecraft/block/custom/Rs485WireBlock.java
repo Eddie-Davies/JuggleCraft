@@ -12,9 +12,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class Rs485WireBlock extends Block {
     private static final VoxelShape SHAPE = Shapes.or(
-            Block.box(6.0, 6.0, 0.0, 10.0, 10.0, 16.0),
-            Block.box(6.0, 0.0, 6.0, 10.0, 16.0, 10.0),
-            Block.box(0.0, 6.0, 6.0, 16.0, 10.0, 10.0)
+            Block.box(6.0, 7.0, 0.0, 10.0, 9.0, 16.0)
     );
 
     public Rs485WireBlock() {

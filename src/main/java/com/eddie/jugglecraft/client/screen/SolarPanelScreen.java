@@ -1,40 +1,24 @@
 package com.eddie.jugglecraft.client.screen;
 
-import com.eddie.jugglecraft.logic.DeviceAddress;
 import com.eddie.jugglecraft.menu.SolarPanelMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
-public class SolarPanelScreen extends AbstractContainerScreen<SolarPanelMenu> {
+public class SolarPanelScreen extends AbstractEnergyScreen<SolarPanelMenu> {
     private Button togglePanelButton;
 
     public SolarPanelScreen(SolarPanelMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
-        imageWidth = 196;
-        imageHeight = 276;
-        inventoryLabelY = 182;
+        super(menu, inventory, title, 196, 276);
     }
 
     @Override
     protected void init() {
         super.init();
-        titleLabelX = (imageWidth - font.width(title)) / 2;
         togglePanelButton = addRenderableWidget(Button.builder(getToggleButtonLabel(), button -> pressMenuButton(SolarPanelMenu.TOGGLE_PANEL_BUTTON))
                 .bounds(leftPos + 104, topPos + 54, 80, 20)
                 .build());
-
-        addIpButtons(12, 240, SolarPanelMenu.IP_OCTET_DECREMENT_BASE, SolarPanelMenu.IP_OCTET_INCREMENT_BASE);
-    }
-
-    @Override
-    protected void containerTick() {
-        super.containerTick();
-        if (togglePanelButton != null) {
-            togglePanelButton.setMessage(getToggleButtonLabel());
-        }
     }
 
     @Override
@@ -42,13 +26,14 @@ public class SolarPanelScreen extends AbstractContainerScreen<SolarPanelMenu> {
         int x = leftPos;
         int y = topPos;
 
-        guiGraphics.fill(x, y, x + imageWidth, y + imageHeight, 0xFF829680);
-        guiGraphics.fill(x + 1, y + 1, x + imageWidth - 1, y + imageHeight - 1, 0xFFF1EFDF);
-        guiGraphics.fill(x + 8, y + 18, x + imageWidth - 8, y + 96, 0xFF213026);
+        drawEnergyBackground(guiGraphics, 0xFF829680, 0xFFF1EFDF, 0xFFD6D2C5);
+
+        // Data display area
         guiGraphics.fill(x + 14, y + 116, x + imageWidth - 14, y + 172, 0xFFD6D2C5);
+
+        // Energy and generation bars
         guiGraphics.fill(x + 150, y + 24, x + 162, y + 84, 0xFF52636A);
         guiGraphics.fill(x + 166, y + 24, x + 178, y + 84, 0xFF6E5B3C);
-        guiGraphics.fill(x + 8, y + 224, x + imageWidth - 8, y + imageHeight - 8, 0xFFD6D2C5);
 
         int energyProgress = menu.getEnergyProgress();
         if (energyProgress > 0) {
@@ -92,10 +77,10 @@ public class SolarPanelScreen extends AbstractContainerScreen<SolarPanelMenu> {
         guiGraphics.drawString(font, Component.literal("Height: " + menu.getHeightFactorPercent() + "%"), 18, 138, 0xFF203026, false);
         guiGraphics.drawString(font, Component.literal("Weather: " + menu.getWeatherFactorPercent() + "%"), 100, 124, 0xFF203026, false);
         guiGraphics.drawString(font, Component.literal("Sky: " + menu.getSkyFactorPercent() + "%"), 100, 138, 0xFF203026, false);
-        guiGraphics.drawString(font, Component.literal("IP: " + DeviceAddress.toString(menu.getIpAddress())), 12, 230, 0xFF203026, false);
+        renderIpLabel(guiGraphics, 230, 0xFF203026);
     }
 
-    private void pressMenuButton(int buttonId) {
+    protected void pressMenuButton(int buttonId) {
         if (minecraft != null && minecraft.gameMode != null) {
             minecraft.gameMode.handleInventoryButtonClick(menu.containerId, buttonId);
         }
@@ -105,18 +90,27 @@ public class SolarPanelScreen extends AbstractContainerScreen<SolarPanelMenu> {
         return Component.literal(menu.isPanelEnabled() ? "Disable Panel" : "Enable Panel");
     }
 
-    private void addIpButtons(int baseX, int baseY, int decrementBase, int incrementBase) {
-        for (int octetIndex = 0; octetIndex < DeviceAddress.OCTET_COUNT; octetIndex++) {
-            int buttonX = leftPos + baseX + octetIndex * 38;
-            int decrementId = decrementBase + octetIndex;
-            int incrementId = incrementBase + octetIndex;
+    @Override
+    protected int getMenuIpAddress() {
+        return menu.getIpAddress();
+    }
 
-            addRenderableWidget(Button.builder(Component.literal("+"), button -> pressMenuButton(incrementId))
-                    .bounds(buttonX, topPos + baseY, 18, 16)
-                    .build());
-            addRenderableWidget(Button.builder(Component.literal("-"), button -> pressMenuButton(decrementId))
-                    .bounds(buttonX, topPos + baseY + 18, 18, 16)
-                    .build());
+    @Override
+    protected void adjustIpOctet(int octetIndex, int delta) {
+        if (delta > 0) {
+            pressMenuButton(SolarPanelMenu.IP_OCTET_INCREMENT_BASE + octetIndex);
+        } else {
+            pressMenuButton(SolarPanelMenu.IP_OCTET_DECREMENT_BASE + octetIndex);
         }
+    }
+
+    @Override
+    protected void onIpArrowUp() {
+        adjustIpOctet(0, 1);
+    }
+
+    @Override
+    protected void onIpArrowDown() {
+        adjustIpOctet(0, -1);
     }
 }
