@@ -1,3 +1,4 @@
+
 # JuggleCraft Blocks And Behaviour Guide
 
 This guide documents what is currently implemented in the mod, how each block behaves in-game, and what is planned next.
@@ -186,8 +187,14 @@ Extends local control reachability for J-Box device discovery/control.
 - Auto-connections:
   - Connects to neighboring RS485 Wire in N/S/E/W
   - Connections only form within the same mounting plane (floor-to-floor, ceiling-to-ceiling)
+  - Wire visuals now flow into adjacent RS485-aware blocks, including terminals and mounted devices, to avoid a disconnected floating look
 - Survival:
   - Breaks if its supporting block face is removed
+
+### Visual Style
+
+- Copper wire material is retained for the network cable itself
+- Connection points are intended to visually blend into nearby RS485-aware blocks
 
 ### Important Note
 
@@ -207,12 +214,14 @@ Compact network terminal/switch style block intended as an RS485 endpoint/connec
 
 - Registered and obtainable in creative tab
 - Has localized name and models
+- Acts as a reactive RS485 node with a black terminal body and copper connector pieces
+- Visually responds to neighboring RS485 connections so the wire appears to emerge from the block
 - No menu/UI
-- No dedicated network logic beyond being a placeable block at this stage
+- Now participates in RS485 traversal and connection flow as part of the local control graph
 
 ### Current Limitation
 
-- RS485 pathfinding currently traverses RS485 Wire only, not RS485 Terminal nodes.
+- RS485 Terminal is still a visual/control-network node only; it does not transport FE.
 
 ## FE to Redstone Transformer
 
