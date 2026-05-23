@@ -11,6 +11,8 @@
   "item.jugglecraft.fe_to_redstone_transformer": "FE to Redstone Transformer",
   "block.jugglecraft.rs485_wire": "RS485 Wire",
   "item.jugglecraft.rs485_wire": "RS485 Wire",
+  "block.jugglecraft.rs485_terminal": "RS485 Terminal",
+  "item.jugglecraft.rs485_terminal": "RS485 Terminal",
   "creativetab.jugglecraft.jugglecraft_tab": "JuggleCraft",
   "container.jugglecraft.basic_battery": "Basic Battery",
   "container.jugglecraft.coal_generator": "Coal Generator",

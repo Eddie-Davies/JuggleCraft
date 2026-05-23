@@ -1,0 +1,20 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "wire": "minecraft:block/copper_block"
+  },
+  "elements": [
+    {
+      "from": [6, 0, 0],
+      "to": [10, 1, 8],
+      "faces": {
+        "north": { "uv": [6, 15, 10, 16], "texture": "#wire" },
+        "south": { "uv": [6, 15, 10, 16], "texture": "#wire" },
+        "west": { "uv": [0, 15, 8, 16], "texture": "#wire" },
+        "east": { "uv": [0, 15, 8, 16], "texture": "#wire" },
+        "up": { "uv": [6, 0, 10, 8], "texture": "#wire" },
+        "down": { "uv": [6, 0, 10, 8], "texture": "#wire" }
+      }
+    }
+  ]
+}

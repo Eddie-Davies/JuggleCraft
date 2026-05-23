@@ -1,5 +1,44 @@
 {
-  "variants": {
-    "": { "model": "jugglecraft:block/rs485_wire" }
-  }
+  "multipart": [
+    {
+      "when": { "ceiling": "false" },
+      "apply": { "model": "jugglecraft:block/rs485_wire" }
+    },
+    {
+      "when": { "ceiling": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_wire_ceiling" }
+    },
+    {
+      "when": { "ceiling": "false", "north": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_wire_side", "y": 0 }
+    },
+    {
+      "when": { "ceiling": "false", "east": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_wire_side", "y": 90 }
+    },
+    {
+      "when": { "ceiling": "false", "south": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_wire_side", "y": 180 }
+    },
+    {
+      "when": { "ceiling": "false", "west": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_wire_side", "y": 270 }
+    },
+    {
+      "when": { "ceiling": "true", "north": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_wire_side_ceiling", "y": 0 }
+    },
+    {
+      "when": { "ceiling": "true", "east": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_wire_side_ceiling", "y": 90 }
+    },
+    {
+      "when": { "ceiling": "true", "south": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_wire_side_ceiling", "y": 180 }
+    },
+    {
+      "when": { "ceiling": "true", "west": "true" },
+      "apply": { "model": "jugglecraft:block/rs485_wire_side_ceiling", "y": 270 }
+    }
+  ]
 }
