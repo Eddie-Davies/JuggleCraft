@@ -1,3 +1,9 @@
 NEXT JOBS:
 
-REfactor Device menus to be usable
+- Continue refining the menus so they are easier to use and more consistent.
+- Implement recipes for all existing items so everything that exists is craftable.
+- Redesign item sizes and textures so the visual language is clearer and more consistent.
+- Add access points for larger blocks, wires, and future multi-block or cabinet-style systems.
+- Add a Screen block that can provide UI access for batteries, J-Boxes, and other UI-capable devices.
+- Fix Solar Panel power integration so generation and transfer behave correctly.
+- Make battery charge and discharge behavior more predictable and follow the intended logic more closely.s

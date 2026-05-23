@@ -16,6 +16,17 @@ Implemented blocks currently in the JuggleCraft creative tab:
 - RS485 Terminal
 - FE to Redstone Transformer
 
+## Size Convention
+
+All block descriptions in this guide should describe size by footprint in blocks.
+
+- Use the format `width x height x depth` in block units.
+- If a block is surface-mounted or visually thin, still describe its footprint as the block space it occupies.
+- Example: `1 x 1 x 1 block footprint`.
+- Example: `1 x 1 x 1 block footprint, surface-mounted`.
+
+This is the standard to use for future oversized blocks, multiblocks, and cabinet-style systems.
+
 ## System Overview (Current)
 
 JuggleCraft currently runs on a local RS485 control network and Forge Energy transfer.
@@ -43,6 +54,10 @@ JuggleCraft currently runs on a local RS485 control network and Forge Energy tra
 ### Purpose
 
 Local control hub for IP-registered devices on the RS485-reachable graph.
+
+### Size
+
+- 1 x 1 x 1 block footprint, surface-mounted
 
 ### Core Behaviour
 
@@ -79,6 +94,10 @@ Per selected registered slot, J-Box can issue one action:
 
 Burns furnace fuel and pushes FE directly to adjacent FE receivers while enabled.
 
+### Size
+
+- 1 x 1 x 1 block footprint
+
 ### Core Behaviour
 
 - Generation rate: 40 FE/t while burning
@@ -98,6 +117,10 @@ Burns furnace fuel and pushes FE directly to adjacent FE receivers while enabled
 ### Purpose
 
 Stores FE and exposes mode-gated receive/extract behavior.
+
+### Size
+
+- 1 x 1 x 1 block footprint
 
 ### Core Behaviour
 
@@ -123,6 +146,10 @@ Stores FE and exposes mode-gated receive/extract behavior.
 
 Generates FE from environmental sunlight conditions and pushes FE to adjacent receivers.
 
+### Size
+
+- 1 x 1 x 1 block footprint
+
 ### Core Behaviour
 
 - Internal capacity: 12,000 FE
@@ -147,6 +174,10 @@ Real-time generation uses:
 
 Extends local control reachability for J-Box device discovery/control.
 
+### Size
+
+- 1 x 1 x 1 block footprint, floor-mounted or ceiling-mounted
+
 ### Latest Behaviour
 
 - Mounting planes supported:
@@ -168,6 +199,10 @@ Extends local control reachability for J-Box device discovery/control.
 
 Compact network terminal/switch style block intended as an RS485 endpoint/connection point.
 
+### Size
+
+- 1 x 1 x 1 block footprint
+
 ### Current Behaviour
 
 - Registered and obtainable in creative tab
@@ -184,6 +219,10 @@ Compact network terminal/switch style block intended as an RS485 endpoint/connec
 ### Purpose
 
 Mounted read block that converts attached device FE state/activity into redstone output.
+
+### Size
+
+- 1 x 1 x 1 block footprint, surface-mounted
 
 ### Attachment Rule
 
@@ -240,10 +279,14 @@ This section is split into near-term engineering tasks and larger feature ideas.
 - [ ] Add crafting recipe for RS485 Terminal
 - [ ] Decide and implement RS485 Terminal network semantics (traversable node, endpoint rules, or bridge logic)
 - [ ] Improve in-game docs/tooltips for IP registration and slot control flow
+- [ ] Add Cabinet item / block for micro power grids inside a larger cabinet footprint
+- [ ] Add Power Cable as a true FE transport block for the power system
+- [ ] Add Electrical Map for network visibility, routing, or grid inspection
 
 ## B) Planned System Expansions (From plan.md)
 
 - [ ] Core registry and networking refinements
+- [ ] Cabinet-based microgrid system and internal service networks
 - [ ] Progression expansion:
   - Wind turbine generation
   - Advanced batteries
@@ -269,6 +312,8 @@ This section is split into near-term engineering tasks and larger feature ideas.
   - Communication-state readouts
 - [ ] Balance and polish pass:
   - Capacities, rates, burn values, UX, and assets
+- [ ] Power Cable network infrastructure for FE distribution
+- [ ] Electrical Map UI and/or block for visualizing power networks
 
 ## C) Idea Backlog (From JuggleEnergyMinecraftModIdea.md)
 
@@ -288,6 +333,13 @@ This section is split into near-term engineering tasks and larger feature ideas.
 - [ ] Transformers for stepping voltage/power up/down (gameplay abstraction)
 - [ ] Fuses and breakers for circuit protection
 - [ ] Energy alarms and emergency shutdown systems
+- [ ] Cabinet-based enclosed microgrid systems
+
+### Industrial / Infrastructure Items
+
+- [ ] Power Cable
+- [ ] Electrical Map
+- [ ] Cabinet
 
 ### Control And Automation
 
