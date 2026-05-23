@@ -1,547 +1,332 @@
 # JuggleCraft Blocks And Behaviour Guide
 
-This document describes the gameplay-facing changes currently implemented in the project, how each block works, how the blocks interact with each other, and the current limits of the system.
+This guide documents what is currently implemented in the mod, how each block behaves in-game, and what is planned next.
 
-## Overview Of Recent Changes
+Last updated: 2026-05-23
 
-The current JuggleCraft feature set now includes:
+## Quick Status
 
-- A Coal Generator with a fuel slot and an on or off control.
-- A Basic Battery with explicit charge states.
-- A custom Solar Panel that generates FE from sunlight and altitude.
-- A J-Box that can register and control up to 16 connected devices by IP.
-- An RS485 Wire block that extends a local controller network.
-- An FE to Redstone Transformer that reads FE from an attached device and outputs a proportional redstone signal.
-- Right-click menu interfaces for the Coal Generator, Basic Battery, and J-Box.
+Implemented blocks currently in the JuggleCraft creative tab:
 
-At this stage, the design is local-network and IP-based.
+- J-Box
+- Coal Generator
+- Basic Battery
+- Solar Panel
+- RS485 Wire
+- RS485 Terminal
+- FE to Redstone Transformer
 
-- The J-Box can be placed freely and discovers devices through direct adjacency or connected RS485 wire paths.
-- Each J-Box, Coal Generator, and Basic Battery has a configurable IP address in its menu.
-- Each J-Box, Coal Generator, Basic Battery, and Solar Panel has a configurable IP address in its menu.
-- A J-Box can only control devices whose IP has been registered into one of its 16 device slots.
-- The FE to Redstone Transformer must also be placed directly onto an FE-capable device.
-- There is no remote routing system outside the local RS485-connected graph yet.
+## System Overview (Current)
 
-## Current Block List
+JuggleCraft currently runs on a local RS485 control network and Forge Energy transfer.
 
-The currently relevant gameplay blocks are:
+- FE transfer is adjacency-based between FE-capable blocks.
+- Device control is IP-based via J-Box registrations.
+- RS485 network pathfinding is local and graph-limited.
+- RS485 currently transports control reachability, not FE.
 
-- `J-Box`
-- `Coal Generator`
-- `Basic Battery`
-- `Solar Panel`
-- `RS485 Wire`
-- `FE to Redstone Transformer`
+### Local RS485 Control Graph
 
-All of them appear in the JuggleCraft creative tab.
+- J-Box scans through connected RS485 Wire nodes and directly adjacent positions.
+- Reachable controllable devices are:
+  - Coal Generator
+  - Basic Battery
+  - Solar Panel
+- Search is breadth-first and capped to 256 visited nodes.
+- If multiple candidates share an IP, closest path wins; if tied, earlier placement order wins.
+- If multiple J-Boxes can reach the same device/IP, shortest-path J-Box wins (then placement order tie-break).
 
-## Coal Generator
-
-### Purpose
-
-The Coal Generator burns furnace fuel and pushes FE directly into adjacent FE receivers when enabled.
-
-### Core Behaviour
-
-- Internal capacity: `0 FE`
-- Generation rate while burning: `40 FE/t`
-- Maximum push rate: `40 FE/t`
-- Fuel slot count: `1`
-- Fuel type: any item accepted by Forge burn-time logic for smelting fuel
-
-### How To Use It
-
-1. Place the Coal Generator in the world.
-2. Right-click it to open its menu.
-3. Put coal or another valid fuel in the fuel slot.
-4. Use the menu button to turn the generator on or off.
-
-### Enabled And Disabled States
-
-- `On`: the generator consumes fuel, produces `40 FE/t`, and immediately pushes that FE to adjacent FE receivers.
-- `Off`: the generator does not burn fuel and does not generate or push FE.
-
-If no adjacent receiver accepts FE while the generator is burning, that tick's generated FE is lost because the generator no longer buffers energy internally.
-
-### Generator Menu
-
-The generator menu currently provides:
-
-- A fuel slot
-- A burn indicator
-- An FE bar and FE tooltip
-- A button to toggle the generator on or off
-- IP address controls
-
-### Interaction With Other Blocks
-
-- It can charge a `Basic Battery` placed adjacent to it, but only if the battery is in `Charging` mode.
-- A `J-Box` mounted on the generator can toggle the generator on or off.
-- An `FE to Redstone Transformer` mounted on the generator now reads live generation state instead of a stored FE buffer.
-
-## Basic Battery
-
-### Purpose
-
-The Basic Battery stores FE and now has an explicit operating mode that controls whether it can receive, hold, or output energy.
-
-### Core Behaviour
-
-- Internal capacity: `100000 FE`
-- Maximum transfer rate: `200 FE/t`
-
-### Battery Modes
-
-The battery supports three modes:
-
-#### `Charging`
-
-- The battery accepts FE input.
-- The battery does not allow FE extraction through its exposed capability.
-- This is the default mode when the block is created.
-
-Use this mode when the battery is meant to fill from a generator or another FE source.
-
-#### `Idle`
-
-- The battery does not accept FE input.
-- The battery does not output FE.
-- The battery acts as isolated stored energy.
-
-Use this mode when you want stored FE preserved without charging or discharging.
-
-#### `Discharging`
-
-- The battery does not accept FE input.
-- The battery allows FE extraction.
-- The battery actively pushes FE to adjacent FE receivers each server tick cycle, up to its transfer limit.
-
-Use this mode when the battery should behave like an active power source for nearby FE consumers.
-
-### How To Use It
-
-1. Place the Basic Battery in the world.
-2. Right-click it to open its menu.
-3. Use the mode button to cycle through `Charging`, `Idle`, and `Discharging`.
-
-### Battery Menu
-
-The battery menu currently provides:
-
-- An FE bar and FE tooltip
-- A text readout of stored FE and total capacity
-- A button that cycles the current battery mode
-- IP address controls
-
-### Interaction With Other Blocks
-
-- If the battery is next to an enabled `Coal Generator`, it will only fill while set to `Charging`.
-- If the battery is next to an active `Solar Panel`, it will fill while set to `Charging`.
-- If the battery is set to `Discharging`, it can supply adjacent FE receivers.
-- A `J-Box` mounted on the battery can cycle the battery mode without opening the battery directly.
-- An `FE to Redstone Transformer` mounted on the battery can output redstone strength based on how full the battery is.
-
-## Solar Panel
-
-### Purpose
-
-The Solar Panel is a custom JuggleCraft generator that converts sunlight into FE and stores that FE in a local internal buffer before pushing it to adjacent FE receivers.
-
-### Core Behaviour
-
-- Internal capacity: `12000 FE`
-- Peak output: `120 FE/t`
-- Maximum push rate: `120 FE/t`
-- Default IP: `192.168.1.1`
-
-### Generation Factors
-
-Solar generation changes in real time based on:
-
-- `Sun position`: production ramps up after sunrise, peaks at midday, and falls back to zero at sunset.
-- `Day cycle`: no production is generated during the night.
-- `Sky access`: blocks above the panel stop generation completely.
-- `Weather`: rain reduces output and thunder reduces it further.
-- `Height`: higher placement increases output efficiency above sea level.
-
-### Solar Panel Menu
-
-The solar panel menu currently provides:
-
-- An FE bar for stored internal energy
-- A generation bar for current FE/t output
-- A toggle button to enable or disable the panel
-- Readouts for sun, height, weather, and sky efficiency
-- IP address controls
-
-### Interaction With Other Blocks
-
-- It can charge adjacent `Basic Battery` blocks.
-- A `J-Box` can add and control a solar panel by IP over direct adjacency or RS485 wire.
-- Multiple solar panels can share an IP, and the J-Box will select the closest one first.
+## Block Behaviours
 
 ## J-Box
 
 ### Purpose
 
-The J-Box is now a local IP-based controller. It can manage up to 16 devices that are either directly adjacent to it or reachable through connected RS485 wire.
+Local control hub for IP-registered devices on the RS485-reachable graph.
 
-### Network Rule
+### Core Behaviour
 
-The J-Box forms a local control network over:
+- Max registered device slots: 16
+- Scan interval: every 10 ticks
+- Default J-Box IP: 10.172.152.1
+- Stores per-slot snapshots (type, online status, control state, flow/energy/capacity metrics)
 
-- Directly adjacent controllable devices
-- Chains of connected `RS485 Wire` blocks
+### What It Can Control
 
-Compatible controllable devices are currently:
+Per selected registered slot, J-Box can issue one action:
 
-- `Coal Generator`
-- `Basic Battery`
-- `Solar Panel`
+- Basic Battery: cycle mode (Charging -> Idle -> Discharging)
+- Coal Generator: toggle enabled/disabled
+- Solar Panel: toggle enabled/disabled
 
-Only devices that are physically reachable through that local graph and whose IP has been added to the J-Box can be controlled from the J-Box menu.
+### Menu Capabilities
 
-### IP Addressing
+- Edit J-Box IP
+- Edit pending target IP
+- Add pending IP to next free slot (if reachable and not already registered)
+- Remove selected slot registration
+- Next/previous slot navigation
+- View online/offline and device telemetry for selected slot
 
-- Default J-Box IP: `10.172.152.1`
-- Default generator IP: `192.168.1.1`
-- Default battery IP: `192.168.1.1`
-- Default solar panel IP: `192.168.1.1`
+### Notes
 
-Because generators and batteries share the same default IP, you must usually change device IPs before adding multiple devices to one J-Box.
+- Registration is by IP, but control still requires live RS485/local reachability.
+- Slot snapshots refresh on server tick scans.
 
-### What The J-Box Controls
+## Coal Generator
 
-The behaviour depends on the currently selected registered device slot.
+### Purpose
 
-#### Selected Basic Battery
+Burns furnace fuel and pushes FE directly to adjacent FE receivers while enabled.
 
-The J-Box reads:
+### Core Behaviour
 
-- Battery mode
-- Stored FE
-- FE capacity
+- Generation rate: 40 FE/t while burning
+- Max output push: 40 FE/t
+- Internal FE capacity: 0 FE (no FE buffer)
+- Fuel slots: 1
+- Default device IP: 192.168.1.1
+- Starts enabled by default
 
-Its control button cycles the battery through:
+### Practical Effects
 
-- `Idle`
-- `Charging`
-- `Discharging`
+- If no neighbor accepts FE on a tick, that generated FE is effectively lost.
+- Mounted transformer interaction can consume burn time faster.
 
-#### Selected Coal Generator
+## Basic Battery
 
-The J-Box reads:
+### Purpose
 
-- Generator on or off state
-- Stored FE
-- FE capacity
+Stores FE and exposes mode-gated receive/extract behavior.
 
-Its control button toggles:
+### Core Behaviour
 
-- `Generator On`
-- `Generator Off`
+- Capacity: 100,000 FE
+- Max receive/extract transfer: 200 FE/t
+- Default mode: Charging
+- Default device IP: 192.168.1.1
 
-#### Selected Solar Panel
+### Modes
 
-The J-Box reads:
+- Charging: receive only
+- Idle: no receive, no extract
+- Discharging: extract only and actively pushes to adjacent receivers
 
-- Solar panel enabled or disabled state
-- Current FE/t production
-- Maximum FE/t production
+### Practical Effects
 
-Its control button toggles:
+- External FE capability obeys the selected mode.
+- In Discharging mode, it pushes FE to neighbors each server tick if possible.
 
-- `Panel On`
-- `Panel Off`
+## Solar Panel
 
-### J-Box Menu
+### Purpose
 
-The J-Box menu currently provides:
+Generates FE from environmental sunlight conditions and pushes FE to adjacent receivers.
 
-- The J-Box's own IP address controls
-- A target IP editor for adding a device
-- Previous and next slot buttons for up to `16` registered devices
-- The selected slot's stored IP and online or offline status
-- The selected device's current type, control state, FE, and capacity or output
-- A context-sensitive control button for the selected online device
-- An `Add Device` button that registers a reachable matching IP into the next free slot
+### Core Behaviour
 
-### Important Limitation
+- Internal capacity: 12,000 FE
+- Max generation: 120 FE/t
+- Max output push: 120 FE/t
+- Default device IP: 192.168.1.1
+- Starts enabled by default
 
-The J-Box only controls devices that are both reachable on the local RS485 graph and explicitly registered by IP.
+### Generation Factors
 
-When multiple reachable devices share the same IP:
+Real-time generation uses:
 
-- The J-Box picks the device with the shortest direct or wire path first.
-- If two matching devices are at the same distance, it falls back to the one placed earlier.
-
-When multiple J-Boxes compete for the same reachable device IP:
-
-- Control priority goes to the J-Box with the shortest path to that device.
-- If two J-Boxes are at the same distance, it falls back to the one placed earlier.
-
-It does not currently:
-
-- control multiple devices at once with one button press
-- rebalance energy between blocks
-- prioritize one battery over another
-- route FE through an abstract controller graph
+- Daytime sun factor (ramps to midday peak, zero at night)
+- Weather factor (rain/thunder penalties)
+- Sky access (blocked sky = zero generation)
+- Sky light level factor
+- Height factor (scales from 70% to 120% based on altitude vs sea level/max build)
 
 ## RS485 Wire
 
 ### Purpose
 
-RS485 Wire extends the local J-Box control graph so the controller does not have to sit directly on top of a battery or generator.
+Extends local control reachability for J-Box device discovery/control.
 
-### How It Works
+### Latest Behaviour
 
-- A J-Box scans through touching RS485 wire blocks.
-- Any generator or battery touching that connected wire graph is considered reachable.
-- Reachable devices can be added to the J-Box by entering their IP and pressing `Add Device`.
-- The J-Box stores up to `16` device IP registrations.
+- Mounting planes supported:
+  - Floor-mounted (top face support required)
+  - Ceiling-mounted (bottom face support required)
+- Auto-connections:
+  - Connects to neighboring RS485 Wire in N/S/E/W
+  - Connections only form within the same mounting plane (floor-to-floor, ceiling-to-ceiling)
+- Survival:
+  - Breaks if its supporting block face is removed
 
-### Practical Note
+### Important Note
 
-RS485 Wire handles control connectivity only. It does not transport FE.
+- RS485 Wire currently does not carry FE, only control graph connectivity.
 
-## FE To Redstone Transformer
+## RS485 Terminal
 
 ### Purpose
 
-The FE to Redstone Transformer is a mounted read-only block that converts FE storage in an attached device into a redstone signal.
+Compact network terminal/switch style block intended as an RS485 endpoint/connection point.
+
+### Current Behaviour
+
+- Registered and obtainable in creative tab
+- Has localized name and models
+- No menu/UI
+- No dedicated network logic beyond being a placeable block at this stage
+
+### Current Limitation
+
+- RS485 pathfinding currently traverses RS485 Wire only, not RS485 Terminal nodes.
+
+## FE to Redstone Transformer
+
+### Purpose
+
+Mounted read block that converts attached device FE state/activity into redstone output.
 
 ### Attachment Rule
 
-The transformer must be placed directly on an FE-capable block.
+- Must be placed onto an FE-capable attached block face.
+- If attachment becomes invalid, it breaks.
+
+### Output Rules
 
-Currently, valid practical targets include:
+- Basic Battery: outputs 0-15 based on fill ratio
+- Coal Generator: outputs 15 while actively generating, else 0
+- Other FE storages (if any): outputs 0-15 based on fill ratio
+
+### Energy Cost While Active
+
+If computed signal > 0, transformer consumes energy from attached device profile:
 
-- `Coal Generator`
-- `Basic Battery`
+- Basic Battery profile: update every 5 ticks, 25 FE per update (100 FE/s)
+- Coal Generator profile: update every tick, 40 FE per update (consumes burn time equivalent)
+- Default profile: update every 5 ticks, 20 FE per update
 
-If the attached block is removed or is not FE-capable, the transformer cannot remain mounted and will break from that position.
+If energy cost cannot be paid on an update, output is forced to 0.
 
-### How It Works
+## Recipes And Content Coverage
 
-- The transformer checks the attached device on a device-specific tick rate.
-- It consumes energy over time from the attached device while outputting a signal.
-- It outputs a redstone signal based on the attached device type.
+Implemented recipes currently exist for:
+
+- J-Box
+- Coal Generator
+- Basic Battery
+- Solar Panel
+- RS485 Wire
+- FE to Redstone Transformer
 
-Examples:
+Current content gap:
 
-- `Basic Battery at 0% full` -> redstone `0`
-- `Basic Battery at 50% full` -> roughly redstone `7`
-- `Basic Battery at 100% full` -> redstone `15`
-- `Coal Generator while actively burning` -> redstone `15`
-- `Coal Generator while idle or disabled` -> redstone `0`
+- RS485 Terminal recipe is not yet present in data/jugglecraft/recipes.
 
-### Important Behaviour Notes
+## Known Limits (Current Design)
 
-- The transformer now consumes FE over time while it is producing a non-zero redstone signal.
-- On a `Basic Battery`, it updates every `5` ticks and drains `25 FE` per update, which is `100 FE/s`.
-- On a `Coal Generator`, it updates every tick and drains the equivalent of `40 FE/t` by consuming the generator's remaining burn time faster.
-- On FE storage blocks, the redstone level still reflects the device fill ratio.
+- No FE cables or distance-loss transmission yet.
+- No FE routing graph; FE remains neighbor-push based.
+- No remote connectivity (SIM/4G/player handheld) yet.
+- No PLC blocks/automation rule engine yet.
+- No redstone network complexity costing yet.
+- RS485 Terminal exists visually/functionally as a block, but is not part of traversal logic yet.
 
-That means:
+## To Be Implemented (Backlog)
 
-- On a `Basic Battery`, the signal reflects how full the battery is, but keeping that signal active slowly drains the battery.
-- On a `Coal Generator`, the signal reflects whether the generator is actively producing FE, and the attached transformer makes the fuel burn faster.
+This section is split into near-term engineering tasks and larger feature ideas. Keep adding new ideas under the appropriate group.
 
-## Recipes
+## A) Near-Term Implementation Tasks
 
-The project currently includes recipes for:
+- [ ] Refactor device menus to be more usable (from TODO.txt)
+- [ ] Add crafting recipe for RS485 Terminal
+- [ ] Decide and implement RS485 Terminal network semantics (traversable node, endpoint rules, or bridge logic)
+- [ ] Improve in-game docs/tooltips for IP registration and slot control flow
 
-- `J-Box`
-- `Coal Generator`
-- `Basic Battery`
-- `Solar Panel`
-- `FE to Redstone Transformer`
+## B) Planned System Expansions (From plan.md)
 
-The FE to Redstone Transformer recipe is:
+- [ ] Core registry and networking refinements
+- [ ] Progression expansion:
+  - Wind turbine generation
+  - Advanced batteries
+  - Industrial batteries
+- [ ] J-Box routing expansion:
+  - Source selection
+  - Battery charge preference
+  - Load shedding
+  - Low-power warnings
+  - Manual system-wide enable/disable
+- [ ] Redstone bridge expansion:
+  - FE-powered redstone cost estimation by connected component complexity
+- [ ] PLC layer:
+  - Trigger logic blocks/modules tied to J-Box state
+- [ ] Remote connectivity:
+  - SIM card items
+  - Online J-Box or upgrade path
+  - Smart controller handheld
+  - 4G towers with FE power and range checks
+- [ ] Communication operations:
+  - Action energy costs
+  - Offline handling when towers lose power
+  - Communication-state readouts
+- [ ] Balance and polish pass:
+  - Capacities, rates, burn values, UX, and assets
 
-- Pattern:
+## C) Idea Backlog (From JuggleEnergyMinecraftModIdea.md)
 
-```text
-IRI
-RQR
-IRI
-```
+### Generation And Storage
 
-- Ingredients:
-  - `I` = Iron Ingot
-  - `R` = Redstone
-  - `Q` = Quartz
+- [ ] Wind Turbine generation affected by environment/height
+- [ ] Wave Power generation near water/oceans
+- [ ] Additional battery tiers:
+  - Advanced Battery
+  - High-Capacity Battery
+  - Industrial Battery
+- [ ] Optional generator upgrades for efficiency/output
 
-## Practical Interaction Patterns
+### Energy Infrastructure
 
-### Setup 1: Simple Charging Loop
+- [ ] Power cables and transfer lines with distance loss
+- [ ] Transformers for stepping voltage/power up/down (gameplay abstraction)
+- [ ] Fuses and breakers for circuit protection
+- [ ] Energy alarms and emergency shutdown systems
 
-1. Place a `Coal Generator`.
-2. Place a `Basic Battery` adjacent to it.
-3. Set the battery to `Charging`.
-4. Fuel and enable the generator.
+### Control And Automation
 
-Result:
+- [ ] Priority-driven load management and power reservation policies
+- [ ] Automatic source switching and load balancing
+- [ ] PLC triggers for low battery, reserve mode, non-essential shutdown
+- [ ] Manual override controls for operators
 
-- The generator burns fuel.
-- The generator stores FE.
-- The generator pushes FE into the battery.
-- The battery fills while in `Charging` mode.
+### Redstone Integration
 
-### Setup 2: Controlled Battery Source
+- [ ] Dynamic redstone network detection and weighted power costing
+- [ ] Device/circuit complexity scaling for FE demand
+- [ ] Better balancing between simple and complex contraptions
 
-1. Charge a `Basic Battery`.
-2. Change the battery mode to `Discharging`.
-3. Place FE-consuming blocks adjacent to the battery in future expansions.
+### Remote Connectivity (4G/SIM Concept)
 
-Result:
+- [ ] SIM card item for authentication/linking
+- [ ] Online J-Box variant with remote command/data support
+- [ ] Smart Controller handheld for remote monitoring and control
+- [ ] 4G tower coverage networks requiring continuous FE power
+- [ ] Remote action energy costs and redundancy/backup gameplay
 
-- The battery actively pushes FE outward up to its transfer limit.
+## Suggested Format For Future Additions
 
-### Setup 3: Wired Battery Control With J-Box
+When you add new ideas, use this template so the backlog stays easy to sort:
 
-1. Place a `Basic Battery`.
-2. Change the battery's IP if needed.
-3. Place a `J-Box` nearby.
-4. Connect the J-Box to the battery directly or with `RS485 Wire`.
-5. Enter the battery IP in the J-Box and add it.
-6. Select the device slot and use the control button to cycle the battery mode.
+- [ ] Feature Name
+  - Group: Generation | Storage | Control | Redstone | Remote | UX | Balance
+  - Priority: P1 | P2 | P3
+  - Status: Idea | Planned | In Progress | Implemented
+  - Notes: short gameplay intent and constraints
 
-Result:
+## Quick Validation Checklist
 
-- The J-Box can control that battery without being mounted directly on it.
-- The selected slot shows the battery's current FE and mode when the battery is reachable.
+When updating this guide after code changes, verify:
 
-### Setup 4: Multi-Device Generator Control With J-Box
-
-1. Place a `Coal Generator`.
-2. Optionally place `RS485 Wire` between the generator and the `J-Box`.
-3. Set a unique generator IP if you plan to control more than one device.
-4. Enter that IP in the J-Box and add it.
-5. Use the slot selector to move between registered devices.
-6. Use the control button to toggle the selected generator on or off.
-
-Result:
-
-- The J-Box can switch between registered generators and control the selected one.
-
-### Setup 5: Altitude-Sensitive Solar Generation
-
-1. Place a `Solar Panel` in an open area with clear sky access.
-2. Place a `Basic Battery` beside it and leave the battery in `Charging` mode.
-3. Open the solar panel menu and confirm the panel is enabled.
-4. Compare output at low elevation and higher elevation during clear midday conditions.
-
-Result:
-
-- The panel produces more FE at higher elevations.
-- Output rises and falls with the sun over the day.
-- Rain and thunder reduce production.
-- The battery fills from the panel's stored and pushed FE.
-
-- The J-Box acts as a controller for that generator only.
-
-### Setup 5: Redstone Meter For FE Storage
-
-1. Place a `Basic Battery` or `Coal Generator`.
-2. Place an `FE to Redstone Transformer` directly on the target block.
-3. Attach vanilla redstone dust, lamps, comparators, or contraptions around the transformer.
-
-Result:
-
-- The transformer outputs stronger redstone as FE stored in the attached block increases.
-
-## Behaviour Summary By Block
-
-### Coal Generator Summary
-
-- Burns fuel when enabled
-- Stores FE internally
-- Pushes FE to adjacent receivers
-- Can be toggled directly or through an attached J-Box
-
-### Basic Battery Summary
-
-- Stores FE internally
-- `Charging` means receive only
-- `Idle` means hold only
-- `Discharging` means output only
-- Can be controlled directly or through an attached J-Box
-
-### J-Box Summary
-
-- Must mount on a battery or generator
-- Controls only one attached device
-- Shows attached device state and FE buffer
-
-### FE To Redstone Transformer Summary
-
-- Must mount on an FE-capable block
-- Reads FE fill ratio
-- Outputs redstone signal `0-15`
-- Does not consume FE
-
-## Known Limitations And Current Design Boundaries
-
-These behaviours are intentionally limited right now:
-
-- The J-Box is not yet a multi-block network controller.
-- Battery mode is local to that battery only.
-- Generator control is local to that generator only.
-- The transformer senses FE level only; it does not control power flow.
-- There are no cables, menus for multiple attached targets, or packet-based remote device graphs.
-- The current FE logic is adjacency-based.
-
-## Testing Notes
-
-To test these systems in game:
-
-1. Ensure Java 17 is installed and your `JAVA_HOME` points to the correct JDK.
-2. From the project root, run:
-
-```powershell
-.\gradlew.bat runClient
-```
-
-3. Open a Creative world.
-4. Pull the blocks from the JuggleCraft creative tab.
-5. Build the interaction setups described above.
-
-If Gradle fails before launch, fix the local JDK path first. At the time these changes were documented, the current environment was blocked by an invalid `JAVA_HOME` path rather than by editor-detected source errors.
-
-## Recommended First In-Game Scenarios
-
-If you want a quick functional smoke test, start with these three scenarios:
-
-### Scenario A: Generator To Battery
-
-1. Place a generator and battery side by side.
-2. Set the battery to `Charging`.
-3. Fuel the generator and turn it on.
-4. Confirm the battery FE rises.
-
-### Scenario B: J-Box Mounted On Battery
-
-1. Mount the J-Box on the battery.
-2. Open the J-Box.
-3. Cycle battery mode.
-4. Confirm the battery menu shows the same mode when opened directly.
-
-### Scenario C: Transformer Output
-
-1. Mount the transformer on the battery.
-2. Charge the battery.
-3. Observe redstone strength increase as battery FE increases.
-
-## Future Expansion Points
-
-The current implementation leaves obvious extension paths:
-
-- J-Box controlling more than one attached device
-- grouped local controller networks
-- more detailed battery routing policies
-- transformer variants with configurable thresholds
-- UI polish and textures specific to each machine
-
-For now, this document should be treated as the authoritative description of the currently implemented device interactions.
+- Block is registered in ModBlocks and ModItems
+- Block appears in ModCreativeTabs if intended
+- Lang keys exist for block/item names
+- Recipe exists if survival-obtainable
+- Guide constants match block entity code values
+- Known limitations section still accurate
