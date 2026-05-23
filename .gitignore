@@ -1,25 +1,43 @@
-# eclipse
-bin
+# ------------------------------------------------------------
+# IDE metadata (machine/user specific)
+# ------------------------------------------------------------
+# Eclipse
+bin/
 *.launch
-.settings
-.metadata
+.settings/
+.metadata/
 .classpath
 .project
 
-# idea
-out
+# IntelliJ / Android Studio
+out/
 *.ipr
 *.iws
 *.iml
-.idea
+.idea/
 
-# gradle
-build
-.gradle
+# VS Code local workspace settings
+.vscode/
 
-# other
-eclipse
-run
+# ------------------------------------------------------------
+# Gradle and Java build outputs (safe to rebuild anywhere)
+# ------------------------------------------------------------
+.gradle/
+build/
+**/build/
 
-# Files from Forge MDK
+# Compiler/runtime outputs
+classes/
+run/
+logs/
+*.log
+*.hprof
+
+# ------------------------------------------------------------
+# OS / editor noise
+# ------------------------------------------------------------
+.DS_Store
+Thumbs.db
+
+# Files from Forge MDK templates
 forge*changelog.txt
